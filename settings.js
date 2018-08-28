@@ -149,30 +149,32 @@ let defaults = {
 };
 
 function getSettings() {
-	settings = defaults;
-	return;
 	
-	// chrome.storage.sync.get(['minAge', 'minKarma', 'maxKarma', 'propDomains', 'deplorables'], function (stored) {
-		// settings = stored;
+	chrome.storage.sync.get(['settings'], function (stored) {
+		if (stored.minAge || stored.minKarma || stored.maxKarma || stored.propDomains || stored.deplorables) {
+			// convert old settings to new
+		}
 		
-		// If any saved settings were null, use the default, save, and reload the page.
-		// if (!stored.minAge || !stored.minKarma || !stored.maxKarma || !stored.propDomains || !stored.deplorables) {
-			// settings = defaults;
-			// saveSettings();
-			// setTimeout(function () { location.reload(); }, 200);
-		// }
-	// });
+		if (!stored.settings) {
+			settings = defaults;
+			saveSettings();
+		}
+		
+		settings = stored.settings;
+		startSettings = $.extend(true, {}, settings);
+		
+		console.log('getSettings()');
+		console.log(settings);
+		console.log('');
+	});
 }
 
 function saveSettings() {
-	console.log('saveSettings()');
-	// chrome.storage.sync.set({
-		// 'minAge': 		settings.minAge, 
-		// 'minKarma': 	settings.minKarma,
-		// 'maxKarma': 	settings.maxKarma,
-		// 'propDomains': 	settings.propDomains,
-		// 'deplorables': 	settings.deplorables
-	// });
+	// console.log('');
+	// console.log('saving settings...');
+	// console.log('');
+	
+	chrome.storage.sync.set({'settings': settings});
 }
 
 
