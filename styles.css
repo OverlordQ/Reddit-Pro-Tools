@@ -17,9 +17,9 @@
 	background-color: #ff7777;
 }
 
-.propagandaColor {
-	background-color: #800080;
-}
+/* .propagandaColor { */
+	/* background-color: #800080; */
+/* } */
 
 .deplorableColor {
 	background-color: #ff4500;
@@ -122,14 +122,14 @@ img.deleteIcon {
 }
 
 .rptTagInfo {
-	width:				250px;
+	/* min-width:				250px; */
 	position:			absolute;
 	background-color: 	#ffffff;
 	border-style:		solid;
 	border-color: 		#c7c7c7;
 	border-width:		1px;
 	border-radius:		4px;
-	padding:			0px;
+	padding:			10px;
 	z-index: 			1000;
 }
 
@@ -167,4 +167,9 @@ img.deleteIcon {
 	top:				4px;
 }
 
+.border {
+	border-style: 	solid;
+	border-color: 	#000000;
+	border-width:	1px;
+}
 

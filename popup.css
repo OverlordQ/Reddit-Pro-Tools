@@ -15,16 +15,25 @@ div {
 	border-width:	1px;
 }
 
-
-
-
+a:link {
+	color: 				#279cb0;
+	text-decoration: 	none;
+}
+a:visited {
+	color: 				#0f3d45;
+	text-decoration: 	none;
+}
+a:hover {
+	color: 				#000000;
+	text-decoration: 	underline;
+}
 
 
 body {
-	margin: 		0px;
-	padding: 		0px;
-	font-size:		medium;
-	background-color: #fafafa;
+	margin: 			0px;
+	padding: 			0px;
+	font-size:			medium;
+	background-color: 	#fafafa;
 }
 
 .imageLogo {
@@ -34,28 +43,30 @@ body {
 	left:			-10px;
 }
 
-.menuFrame {
-    display:		table-cell;
-	padding:		0px 0px 20px 20px;
+
+.mainLayout {
+	vertical-align: 	top;
+}
+.menuFrameWrapper {
+	vertical-align: 	top;
+	padding-left:		100px;
 	
-	background-color: #006B7F;
-	color: 			#ffffff;
+	background-color: 	#006B7F;
+	color: 				#ffffff;
+}
+
+.mainFrameWrapper {
+	vertical-align: 	top;
+	
+	padding-left:		40px;
+	padding-top:		40px;
+}
+
+.menuFrame {
 }
 
 .mainFrame {
-    display:		table-cell;
-	padding-left:	20px;
-	position:		relative;
-	top:			-50px;
 }
-
-
-
-
-
-
-
-
 
 div.menuType {
 	margin-top: 	5px;
@@ -80,22 +91,22 @@ span.menuTag {
 	line-height:	10px;
 }
 
+
+
+
+
 .menuHover {
 	font-size:		105%;
 	position: 		relative;
+				   
 	left: 			-1px;
 }
 
 .menuReset {
 	margin-top: 	30px;
+	margin-right: 	45px;
 	font-size:		smaller;
 	text-align: 	center;
-	position: 		relative;
-	left:			-10px;
-}
-
-#undoDiv {
-	display:		none;
 }
 
 
@@ -106,19 +117,16 @@ span.menuTag {
 
 .button {
 	cursor:			pointer;
+				
 	width:			12px;
 	height:			12px;
-	display:		inline-block;
 	margin-right:	3px;
 	position:		relative;
+	display:		inline-block;
 	
     background-repeat: no-repeat;
     background-position: center;
 }
-
-
-
-
 
 .bold {
 	font-weight: 	bold;
@@ -151,7 +159,7 @@ span.menuTag {
 	color:		#FFFFFF;
 }
 
-.floatingInput {
+.floatingDiv {
 	/* background-color: #006B7F; */
 	background-color: #00849D;
 	border-color:	#000000;
@@ -169,7 +177,8 @@ span.menuTag {
 }
 
 .settingsInput {
-	margin-right:	5px;
+	margin-left:	3px;
+	margin-right:	3px;
 }
 
 .textInput {
@@ -178,13 +187,32 @@ span.menuTag {
 
 .colorDisp {
 	width:			30px;
-	height:			19px;
+	height:			20px;
 	display: 		inline-block;
 	position:		relative;
-	top:			3px;
+	top:			4px;
 	
 	
 	border-style: 	solid;
 	border-color: 	#a9a9a9;
 	border-width:	1px;
+}
+
+.colorDispHover {
+	width:			32px;
+	height:			22px;
+	top:			3px;
+	left:			-1px;
+}
+
+div.colorPicker {
+	display: 		table;
+}
+
+div.colorBox {
+	width:			10px;
+	height:			10px;
+	margin:			5px;
+	display:		table-cell;
+	font-size:		1%;
 }
