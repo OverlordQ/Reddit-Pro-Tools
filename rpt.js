@@ -6,16 +6,19 @@
 
 "use strict";
 
+const printLogs = false;
+
 var settings;
 var db;
 var users = {};
 var domains = [];
-var working = {};
+// var working = {};
 // var startTime = Date.now();
 // var redditVersion = 'old';
 
 const day = 60 * 60 * 24; // one day
 const cacheTime = day;
+// const cacheTime = 0;
 //const cacheTime = 60;
 let numUsers = 0;
 
@@ -36,9 +39,9 @@ $(document).ready(function() {
 	
 	// console.log('length: ' + $('meta[property="og:site_name"]').length)
 	// which version of reddit are we using?
-	if ($('meta[property="og:site_name"]').length) {
-		redditVersion = 'new';
-	}
+	// if ($('meta[property="og:site_name"]').length) {
+		// redditVersion = 'new';
+	// }
 	
 	addCedditLink();
 	
@@ -72,17 +75,15 @@ function rptMain() {
 	let authors = getAuthors();
 	
 	authors.forEach(function(user) {
-		if (!working[user]) {
-			if (!users[user]) {	users[user] = new User(user); }
+		// if (user != 'PoppinKREAM' && user != '2243217910346') { return; }
+		
+		if (!users[user]) {	users[user] = new User(user); }
+		if (!users[user].working) {
+			users[user].working = true;
+			setTimeout(function(){ users[user].addTags(); }, Math.random() * 500);
 			
-			working[user] = true;
-			users[user].dbGet();
-			users[user].aboutGet();
-			users[user].commentsGet();
-			users[user].addTags();
-			// console.log('rptMain():', user + '.addTags();');
 		} else {
-			console.log('\t\tworking:', user);
+			printLog('working:', user);
 		}
 	});
 	// console.log(users);
@@ -100,6 +101,7 @@ function newComments() {
 		numUsers = users.length;
 		
 		// if so, run the main loop again
+		// setTimeout(function () { rptMain(); }, 100);
 		rptMain();
 	}
 }
@@ -115,13 +117,17 @@ function whenFinished(timer) {
 	// let timeElapsed = Math.round((Date.now() - startTime) / 1000);
 	// let elapsed = Math.round((Date.now() - timer) / 1000);
 	// console.log('finished:', Date.now() - timer);
-	console.log('');
+	// console.log('');
 	let store = navigator.storage.estimate().then((data) => { handleQuota(data); });
 }
 
 
 function checkFinished() {
-	if (Object.keys(working).length <= 0) { return false; }
+	// if (Object.keys(working).length <= 0) { return false; }
+	// users.forEach(function(user) {
+	for (let user in users) {
+		if (users[user].working) { return false; }
+	}
 	return true;
 }
 
@@ -138,7 +144,16 @@ function numPretty(num) {
 }
 
 
-
+function printLog() {
+	if (!printLogs) { return; }
+	var log = '';
+	// for (let part in arguments) {
+	for (let i = 0; i < arguments.length; i++) {
+		if (i != 0) { log += ' '; }
+		log += arguments[i];
+	}
+	console.log(log);
+}
 
 
 

@@ -106,6 +106,7 @@ img.deleteIcon {
 	border-width:	1px;
 	border-color:	#c7c7c7;
 	border-radius:	4px;
+	white-space: 	nowrap;
 }
 
 .leftCol {
@@ -122,7 +123,7 @@ img.deleteIcon {
 }
 
 .rptTagInfo {
-	/* min-width:				250px; */
+	width:				350px;
 	position:			absolute;
 	background-color: 	#ffffff;
 	border-style:		solid;

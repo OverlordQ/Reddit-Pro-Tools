@@ -10,6 +10,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 "use strict";
 
 // get a list of users on the page
@@ -41,7 +51,7 @@ function getAuthors() {
 
 
 function SubStats() {
-	 let empty = function () {
+	let empty = function () {
 			this.average 	= null;
 			this.total 		= 0
 			this.length		= 0;
@@ -51,16 +61,24 @@ function SubStats() {
 	this.comment 	= new empty();
 }
 
-function User(user) {
-	// console.log('user:', user);
-	let empty = (typeof(user) == 'string');
-	let emptyStats = {
-		link:		{
-			//updated:	null,
+
+
+function User(username) {
+	printLog('User():', username);
+	
+	this.name = username;
+	this.about = {updated: null};
+	this.comments = null;
+	this.working = false;
+	this.hasTag = false;
+	this.tags = {};
+	this.stats = {
+		links:		{
+			updated:	null,
 			average:	null,
 			total:		0
 		},
-		'comment':		{
+		comments:		{
 			updated:	null,
 			average:	null,
 			total:		0
@@ -68,249 +86,324 @@ function User(user) {
 		subreddits: 	{}
 	};
 	
-	this.name 				= (empty) ? user 			: user.name;
-	this.about 				= (empty) ? {updated: null}	: user.about;
-	this.comments 			= (empty) ? null 			: user.comments;
-	this.stats				= (empty) ? emptyStats		: user.stats;
-	
-	// console.log('empty:', empty);
-	this.tags = {}
-	for (let type in settings) {
-		this.tags[type] = {}
-	}
-	
-	// if (!empty) {
-		// console.log(this.name, this.tags);
-	// }
 	
 	
-	
-	
-	
-	
-	this.dbGet = function() {
-		// don't reload user data from the db
-		if (this.about.updated) { return; }
-		
-		let transaction = db.transaction([table]);
-		
-		// errors
-		transaction.onerror = function(e) {
-			console.log('user.dbGet transaction error:');
-			console.log(e);
-		};
-		
-		let os = transaction.objectStore(table);
-		let req = os.get(this.name);
-		
-		// errors
-		req.onerror = function(e) {
-			console.log('user.dbGet error: ' + table + '!');
-		};
-		
-		req.onsuccess = () => {
-			if (req.result) {
-				users[this.name] = new User(req.result);
-			} else {
-				this.about.updated 			= 0;
-				this.stats.comment.updated	= 0;
-			}
-		};
-	}
-	
-
-	this.dbSave = function() {
-		var os = db.transaction([table], "readwrite").objectStore(table);
-		
-		var save = {
-			name: 				this.name,
-			about: 				this.about,
-			comments: 			this.comments,
-			stats:				this.stats
-		};
-		
-		var req = os.put(save);
-		
-		req.onerror = function(event) {
-			console.log('user.dbSave error: ' + table + ' - ' + this.name + '!');
-		};
-		
-		// req.onsuccess = () => {
-			// saved.push(this.name);
-		// };
-	}
-	
-	
-	
-	
-	
-	this.aboutGet = function () {
-		let user = users[this.name];
-		
+	this.getComments = function() {
 		// wait for the user to load from the db
-		if (user.about.updated == null) {
-			//console.log('waiting on user from db:', user.name);
-			setTimeout(() => { user.aboutGet(); }, 100);
+		if (this.stats.comments.updated == null) {
+			// console.log('getComments() waiting on user from db:', this.name);
+			setTimeout(() => { this.getComments(); }, 100);
 			return;
 		}
+		printLog('\tgetComments:', this.name);
 		
-		// if we didn't have about data saved or if the about data is outdated...
-		if (user.about.link_karma == undefined || datenow() - user.about.updated > cacheTime) {
-			let url = 'https://www.reddit.com/user/' + user.name + '/about.json';
-			$.getJSON(url, (json) => { user.aboutSave(json); })
-			.fail(function () { user.about.updated = datenow(); });
+		// console.log(this.comments);
+		
+		if (!this.comments || !this.comments[0] || !this.comments[0].name) {
+			this.comments = [];
+			this.getCommentsJson('after');
+		} else if (!this.stats.comments.updated || (datenow() - this.stats.comments.updated) > cacheTime) {
+			this.getCommentsJson('before', this.comments[0]);
+		} else {
+			this.evalComments();
 		}
-	};
+	}
 	
-	this.aboutSave = function (json) {
-		this.about.link_karma 		= json.data.link_karma;
-		this.about.comment_karma 	= json.data.comment_karma;
-		this.about.created 			= json.data.created;
-		this.about.updated 			= datenow();
-	};
+	this.getCommentsJson = function(type = 'after', id = null) {
+		// console.log('\t\tgetCommentsJson(' + type + ', ' + id + '):', this.name);
+		let url = 'https://www.reddit.com/user/' + this.name + '/comments.json?sort=new&limit=100';
+		
+		if (id) {
+			url += '&' + type + '=' + id;
+		}
+		
+		// console.log('\t\t\t\turl:', url.replace(/.*\//g, ''), '\n');
+
+		// $.getJSON(url, (json) => {
+			// json.data.before = (json.data.children[0]) ? json.data.children[0].data.name : null;
+			// this.saveComments(type, json);
+			
+			// if (json.data[type]) {
+				// setTimeout(() => { this.getCommentsJson(type, json.data[type]); }, 10000);
+				// this.getCommentsJson(type, json.data[type]);
+			// } else {
+				// console.log('finished comments:', this.name);
+				// this.evalComments();
+			// }
+		// }).fail(function () { this.stats.comments.updated = datenow(); });
+		
+		$.ajax({
+			type: 'GET',
+			url: url,
+			dataType: 'json',
+			success: (json) => {
+				json.data.before = (json.data.children[0]) ? json.data.children[0].data.name : null;
+				this.saveComments(type, json);
+				
+				if (json.data[type]) {
+					// setTimeout(() => { this.getCommentsJson(type, json.data[type]); }, 10000);
+					this.getCommentsJson(type, json.data[type]);
+				} else {
+					// console.log('finished comments:', this.name);
+					this.evalComments();
+				}
+			},
+			fail: function() { 
+				console.log('ajax failed:', url);
+				this.stats.comments.updated = datenow();
+			}
+		});
+	}
+	
+	
+	this.saveComments = function (type, json) {
+		// console.log('\t\t\tsaveComments(' + type + ')');
+		
+		let saved = [];
+		json.data.children.forEach((comment) => {
+			let save = {
+				// parent_id:		comment.data.parent_id,
+				// permalink:		comment.data.permalink,
+				// body:			comment.data.body,
+				// ups:				comment.data.ups,
+				name: 				comment.data.name,
+				created:			comment.data.created_utc,
+				subreddit:			comment.data.subreddit,
+				controversiality:	comment.data.controversiality,
+				score:				comment.data.score,
+			};
+			
+			saved.push(save);
+		});
+	
+		if (type == 'after') {
+			this.comments = this.comments.concat(saved);
+		} else {
+			this.comments = saved.concat(this.comments);
+		}
+	}
+	
+	this.evalComments = function () {
+		printLog('\t\tevalComments():', this.name);
+		
+		// keep up to 1000 comments, discard old ones over 1000
+		if (this.comments.length >= 1000) {
+			this.comments.splice(1000, this.comments.length-1);
+		}
+		
+		this.stats.comments.total = 0;
+		this.comments.forEach((comment) => {
+			this.stats.comments.total += comment.score;
+		});
+		let scoreAvg = Math.round(this.stats.comments.total / this.comments.length * 100) / 100;
+		this.stats.comments.average = scoreAvg;
+		
+		
+		this.stats.subreddits = {};
+		this.comments.forEach((comment) => {
+			if (!this.stats.subreddits[comment.subreddit]) { this.stats.subreddits[comment.subreddit] = new SubStats; }
+			
+			let sub = this.stats.subreddits[comment.subreddit];
+			sub.comment.total += comment.score;
+			sub.comment.length++;
+			sub.comment.average = Math.round(sub.comment.total / sub.comment.length * 100) / 100;
+		});
+		
+		this.stats.comments.updated = datenow();
+		this.evalTags();
+		this.saveDb();
+	}
+	
+	
+	this.evalTags = function () {
+		printLog('\t\t\tevalTags():', this.name);
+		let statsTableLength = 10;
+	
+		for (let type in settings) {
+			this.tags[type] = {}
+			for (let tag in settings[type]) {
+				if (!settings[type][tag].enabled) { continue; }
+				
+				if (type == 'accountage') {
+					let age = Math.round((datenow() - this.about.created) / day);
+					if ((settings[type][tag].gtlt == 'greater' && age > settings[type][tag].age) || 
+						(settings[type][tag].gtlt != 'greater' && age < settings[type][tag].age)) {
+						this.tags[type][tag] = true;
+						this.hasTag = true;
+					}
+					
+				} else if (type == 'subreddits') {
+					// let subs = [];
+					settings[type][tag].list.forEach((sub) => {
+						if (!sub || !this.stats.subreddits[sub]) { return; }
+						if (settings[type][tag].avgtotal == 'average' && this.stats.subreddits[sub].comment.length < 10) { return; }
+						
+						let comparator = (settings[type][tag].avgtotal == 'total') ? this.stats.subreddits[sub].comment.total : this.stats.subreddits[sub].comment.average;
+						
+						if ((settings[type][tag].gtlt == 'greater' && comparator > settings[type][tag].karma) ||
+							(settings[type][tag].gtlt != 'greater' && comparator < settings[type][tag].karma)) {
+							// subs.push(sub);
+							let subs = this.subSort(type, tag, settings[type][tag].list);
+							subs.splice(statsTableLength);
+							this.tags[type][tag] = subs;
+							this.hasTag = true;
+							return;
+						}
+					});
+					
+					// if (subs.length) {
+						// subs = this.subSort(type, tag, subs);
+						// subs.splice(statsTableLength);
+						// this.tags[type][tag] = subs;
+						// this.hasTag = true;
+					// }
+					
+				} else if (type == 'subkarma') {
+					let url = window.location.href.split('/');
+					let urlSubs = (url[3] == 'r') ? url[4].split('+') : [];
+					let subs = [];
+					urlSubs.forEach((sub) => {
+						if (!sub || !this.stats.subreddits[sub]) { return; }
+						if (settings[type][tag].avgtotal == 'average' && this.stats.subreddits[sub].comment.length < 10) { return; }
+						
+						let comparator = (settings[type][tag].avgtotal == 'total') ? this.stats.subreddits[sub].comment.total : this.stats.subreddits[sub].comment.average;
+						
+						if ((settings[type][tag].gtlt == 'greater' && comparator > settings[type][tag].karma) ||
+							(settings[type][tag].gtlt != 'greater' && comparator < settings[type][tag].karma)) {
+							subs.push(sub);
+						}
+					});
+					
+					if (subs.length) {
+						subs = this.subSort(type, tag, subs);
+						subs.splice(statsTableLength);
+						this.tags[type][tag] = subs;
+						this.hasTag = true;
+					}
+					
+				} else if (type == 'karma') {
+					let comparator = (settings[type][tag].avgtotal == 'total') ? this.stats.comments.total : this.stats.comments.average;
+					
+					if ((settings[type][tag].gtlt == 'greater' && comparator > settings[type][tag].karma) ||
+						(settings[type][tag].gtlt != 'greater' && comparator < settings[type][tag].karma)) {
+						
+						let subs = this.subSort(type, tag, Object.keys(this.stats.subreddits));
+						subs.splice(statsTableLength);
+						
+						this.tags[type][tag] = subs;
+						this.hasTag = true;
+					}
+					
+				}
+			}
+		}
+	}
+	
+	this.subSort = function (type, tag, subs) {						
+		let sortBy = [];
+		// for (let sub in subs) {
+		subs.forEach((sub) => {
+			if (!(sub in this.stats.subreddits)) { return; }
+			sortBy[sub] = (settings[type][tag].avgtotal == 'total') ? this.stats.subreddits[sub].comment.total : this.stats.subreddits[sub].comment.average;
+		});
+		
+		subs = Object.keys(sortBy).sort(function(a, b){ return sortBy[b] - sortBy[a]; });
+		
+		if (settings[type][tag].gtlt != 'greater') { subs = subs.reverse(); }
+		
+		return subs;
+	}
+	
+	
+	
 	
 	
 	
 	
 	this.addTags = function () {
-		let user = users[this.name];
-		
-		// wait on user stats to be generated
-		if (!user.about.updated || !user.stats.comment.updated) {
-			setTimeout(function() { user.addTags(); }, 100);
+		// wait on tags to be generated
+		if (!Object.keys(this.tags).length) {
+			setTimeout(() => { this.addTags(); }, 100);
 			return;
 		}
+		if (!this.hasTag) { return; }
+		printLog('\t\t\t\taddTags():', this.name);
 		
-		// if (user.name == 'DEYoungRepublicans') {
-			// console.log('\t\t\taddTags():', '\t', user.name);
-			for (let type in settings) {
-				if (type == 'domains') { continue; }
-				for (let tag in settings[type]) {
-					user.addTag(type, tag);
-				}
+		// $('.rptTag.rptUser-' + this.name).remove();
+		$('span.rptTagWrapper.rptUser-' + this.name).remove();
+		
+		let tagSpans = [];
+		for (let type in this.tags) {
+			for (let tag in this.tags[type]) {
+				tagSpans.push(this.tagSpan(type, tag, this.tags[type][tag]));
 			}
-		// }
+		}
 		
-		delete working[user.name];
+		let userDiv = $(
+			'.author:contains(' + 
+			this.name + '), .s1b41naq-1:contains(' + 
+			this.name + '), ._2tbHP6ZydRpjI44J3syuqC:contains(' + 
+			this.name + '), .s1461iz-1:contains(' + 
+			this.name + ')');
+		userDiv.after(this.tagWrapper().append(tagSpans));
+		// let test = document.createElement('p');
+		// let wrapper = this.tagWrapper();
+		// wrapper.appendChild(tagSpans);
+		// console.log(wrapper);
+		// userDiv.after(wrapper);
+		this.working = false;
 	}
-
-	this.tagSpan = function (type, tag, name) {
-		let span = $('<span/>').addClass('rptTag').css({
-			'background-color': '#' + settings[type][tag].color, 
-			'color': 			'#' + settings[type][tag].tcolor
-		}).attr({
-			user: name,
-			type: type,
-			tag: tag
-		}).text(tag);
-		
+	
+	this.tagWrapper = function() {
+		let span = $('<span/>').addClass('rptTagWrapper rptUser-' + this.name);
+		// let span = document.createElement('span');
+		// span.className = 'rptTagWrapper rptUser-' + this.name;
 		return span;
 	}
 	
-	this.addTag  = function(type, tag) {
-		let user = users[this.name];
-		if (!settings[type][tag].enabled) { return false; }
-		
-		// console.log('addTag():', '\t', user.name, '\t', type, '\t', tag);
-		
-		// console.log(user.tags[type]);
-		if (tag in user.tags[type]) {
-			console.log('\tfound:', type, tag, user.tags[type][tag]);
-			return;
-		} else {
-			// console.log(type, tag, user.name);
-			user.tags[type][tag] = this.tagSpan(type, tag, user.name);
-		}
-		
-		if (type == 'accountage') {
-			
-			let age = Math.round((datenow() - user.about.created) / day);
-			if ((settings[type][tag].gtlt == 'greater' && age > settings[type][tag].age) || 
-				(settings[type][tag].gtlt != 'greater' && age < settings[type][tag].age)) {
-				// console.log(tag, '\t', user.name);
-				user.addTagSpan(type, tag);
-				return true;
-			}
-			
-		} else if (type == 'subreddits') {
-			let subs = [];
-			settings[type][tag].list.forEach((sub) => {
-				if (!sub || !user.stats.subreddits[sub]) { return; }
-				if (settings[type][tag].avgtotal == 'average' && user.stats.subreddits[sub].comment.length <10) { return; }
-				
-				let comparator = (settings[type][tag].avgtotal == 'total') ? user.stats.subreddits[sub].comment.total : user.stats.subreddits[sub].comment.average;
-				
-				if ((settings[type][tag].gtlt == 'greater' && comparator > settings[type][tag].karma) ||
-					(settings[type][tag].gtlt != 'greater' && comparator < settings[type][tag].karma)) {
-					subs.push(sub);
-				}
-			});
-			if (subs.length) {
-				user.addTagSpan(type, tag, subs);
-			}
-			
-		} else if (type == 'subkarma') {
-			let url = window.location.href.split('/');
-			let urlSubs = (url[3] == 'r') ? url[4].split('+') : [];
-			let subs = [];
-			urlSubs.forEach((sub) => {
-				if (!sub || !user.stats.subreddits[sub]) { return; }
-				if (settings[type][tag].avgtotal == 'average' && user.stats.subreddits[sub].comment.length <10) { return; }
-				
-				let comparator = (settings[type][tag].avgtotal == 'total') ? user.stats.subreddits[sub].comment.total : user.stats.subreddits[sub].comment.average;
-				
-				if ((settings[type][tag].gtlt == 'greater' && comparator > settings[type][tag].karma) ||
-					(settings[type][tag].gtlt != 'greater' && comparator < settings[type][tag].karma)) {
-					// console.log(tag, sub, settings[type][tag].avgtotal, comparator, settings[type][tag].gtlt, settings[type][tag].karma, user.name);
-					subs.push(sub);
-				}
-			});
-			if (subs.length) {
-				user.addTagSpan(type, tag, subs);
-			}
-		} else if (type == 'karma') {
-			
-			
-			
-		}
-	}
-	
-	this.addTagSpan = function(type, tag, subs = false) {
-		let user = users[this.name];
-		// console.log(user);
-		let timer = Date.now();
-		
-		$('.rptTag[user="' + this.name + '"][type="' + type + '"][tag="' + tag + '"]').remove();
-		let span = $('<span/>').addClass('rptTag').css({
+	this.tagSpan = function(type, tag, subs = []) {
+		// console.log('tagSpan():', this.name);
+		let span = $('<span/>').addClass('rptTag rptUser-' + this.name).css({
 			'background-color': '#' + settings[type][tag].color, 
 			'color': 			'#' + settings[type][tag].tcolor
 		}).attr({
-			user: user.name,
+			user: this.name,
 			type: type,
 			tag: tag
 		}).text(tag);
-		let displayTag = span.clone().css({'position': 'relative', 'top': '-2px'});
 		
-		let div = $('<div/>')
+		// Hover elements defined here...
+		let displayTag = span.clone(); //.css({'position': 'relative', 'top': '-2px'});
+		
+		let hoverDiv = $('<div/>')
 			.addClass('rptTagInfo')
 			.css('font-size', 'x-small')
 			.mouseleave(function () { this.remove();});
 		
 		let header = $('<div/>').addClass('textCenter').css({
-			'margin-bottom': '10px', 
+			'margin-bottom': '5px', 
 			'white-space': 'nowrap', 
 			'font-size': '110%'});
-			
-		let rpt = $('<span/>').addClass('textCenter bold').css({
+		
+		let rpt = $('<div/>').addClass('textCenter bold').css({
 			'color': '#dd0000', 
 			'font-size': '130%',
-			'margin-right': '5px'
+			'margin-bottom': '5px'
 		}).text('Reddit Pro Tools');
-		header.append([rpt, displayTag]);
+		
+		header.append([$('<a/>').attr('src', '/u/' + this.name).text(' /u/' + this.name), ':', displayTag]);
+		
+		let tagDesc = $('<div/>').addClass('textCenter bold border').css({
+			'padding-top': '5px',
+			'font-size': '90%',
+			'border-width': '1px 0px 0px 0px'});
+			
+		let body = $('<div/>').css({
+			'margin-top': '7px'});
 				
 		if (type == 'accountage') {
 			let year = 365.25;
-			let age = Math.round((datenow() - user.about.created) / day);
+			let age = Math.round((datenow() - this.about.created) / day);
 			let years = Math.floor(age / year);
 			let months = Math.floor(age % year / year * 12);
 			let days = Math.floor(age - years * year - months * year / 12);
@@ -319,82 +412,109 @@ function User(user) {
 			ageText += (months) ? ' ' + months + ' months,' : ''
 			ageText += (days) ? ' ' + days + ' days' : '';
 			
-			// console.log(user.name, years, months, days);
+			// console.log(this.name, years, months, days);
 			
 			span.mouseenter((e) => {
-				this.positionRptTagInfo(div, e.pageX, e.pageY);
+				tagDesc.text('Account age ' + settings[type][tag].gtlt + ' than ' + settings[type][tag].age + ' days');
+				// body.append($('<a/>').attr('href', 'http://reddit.com/u/' + this.name).text('/u/' + this.name));
+				body.html($('<div/>').addClass('textCenter').text('Account age: ' + ageText));
 				
-				// console.log(menu[type].label);
+				hoverDiv.empty();
+				hoverDiv.append([rpt, header, tagDesc, body]);
 				
-				let body = $('<div/>');
-				body.append($('<a/>').attr('href', 'http://reddit.com/u/' + user).text('/u/' + user.name));
-				// body.append($('<span/>').text(': ' + years + ' years, ' + months + ' months, and ' + days + ' days'));
-				body.append($('<span/>').text(': ' + ageText));
-				
-				
-				
-				div.empty();
-				div.append([header, body]);
-				
-				span.after(div);
+				$('body').append(hoverDiv);
+				hoverDiv = this.positionRptTagInfo(hoverDiv, e.pageX, e.pageY);
 			});
 		} else if (type == 'subreddits') {
 			span.mouseenter((e) => {
-				this.positionRptTagInfo(div, e.pageX, e.pageY);
-			
-				// let subs = settings[type][tag].list;
-				// console.log(subs);
-				let body = $('<div/>').append(this.statsTable(type, tag, subs));
+				tagDesc.text('Comment karma ' + settings[type][tag].gtlt + ' than ' + settings[type][tag].karma + ' in:');
 				
-				div.empty();
-				div.append([header, body]);
-				span.after(div);
+				let subLimit = 4;
+				let subsText = '';
+				for (let i in settings[type][tag].list) {
+					if (i > subLimit - 1) { continue; }
+					// console.log(i, settings[type][tag].list[i]);
+					if (i != 0) {
+						subsText += ', ';
+					}
+					subsText += settings[type][tag].list[i];
+				}
+				if (settings[type][tag].list.length > subLimit) { 
+					subsText += ', ...';
+				}
+				let subsList = $('<div/>').addClass('textCenter').text(subsText);
+				
+				body.html(this.statsTable(type, tag, subs));
+				
+				hoverDiv.empty();
+				hoverDiv.append([rpt, header, tagDesc, subsList, body]);
+				
+				$('body').append(hoverDiv);
+				hoverDiv = this.positionRptTagInfo(hoverDiv, e.pageX, e.pageY);
 			});
 			
 		} else if (type == 'subkarma') {
 			span.mouseenter((e) => {
-				this.positionRptTagInfo(div, e.pageX, e.pageY);
-			
-				let url = window.location.href.split('/');
-				let urlSubs = (url[3] == 'r') ? url[4].split('+') : [];
-				// console.log(subs);
-				let body = $('<div/>').append(this.statsTable(type, tag, urlSubs));
+				tagDesc.text('Comment karma ' + settings[type][tag].gtlt + ' than ' + settings[type][tag].karma + ' in current subreddit');
+				body.html(this.statsTable(type, tag, subs));
 				
-				div.empty();
-				div.append([header, body]);
-				span.after(div);
+				hoverDiv.empty();
+				hoverDiv.append([rpt, header, tagDesc, body]);
+				
+				$('body').append(hoverDiv);
+				hoverDiv = this.positionRptTagInfo(hoverDiv, e.pageX, e.pageY);
 			});
 			
 		} else if (type == 'karma') {
-			
-			
-			
+			span.mouseenter((e) => {
+				tagDesc.text('Total comment karma ' + settings[type][tag].gtlt + ' than ' + settings[type][tag].karma);
+				body.html(this.statsTable(type, tag, subs));
+				
+				hoverDiv.empty();
+				hoverDiv.append([rpt, header, tagDesc, body]);
+				
+				$('body').append(hoverDiv);
+				hoverDiv = this.positionRptTagInfo(hoverDiv, e.pageX, e.pageY);
+			});
 		}
 		
+		return span;
+	}
+	
+	this.positionRptTagInfo = function(div, pageX, pageY) {
+		div.css({
+			left: 		(pageX - 50) + 'px',
+			top: 		(pageY - 20) + 'px'
+		});
 		
+		let pos = $(div)[0].getBoundingClientRect();
 		
+		if (0 > pos.left) {
+			div.css('left', '0px');
+		}
+		if (0 > pos.top) {
+			div.css('top', $(window).scrollTop() + 'px');
+		}
+		if (pos.right > $(window).innerWidth()) {
+			div.css('left', ($(window).scrollLeft() + $(window).innerWidth() - pos.width - 10) + 'px');
+		}
+		if (pos.bottom > $(window).innerHeight()) {
+			div.css('top', ($(window).scrollTop() + $(window).innerHeight() - pos.height) + 'px');
+		}
 		
-		let userDiv = $(
-			'.author:contains(' + 
-			this.name + '), .s1b41naq-1:contains(' + 
-			this.name + '), ._2tbHP6ZydRpjI44J3syuqC:contains(' + 
-			this.name + '), .s1461iz-1:contains(' + 
-			this.name + ')');
-		userDiv.after(span);
-		
-		// console.log(Date.now() - timer + '\t' + user.name);
+		return div;
 	}
 	
 	this.statsTable = function(type, tag, subs) {
-		let user = users[this.name];
-		
+		// console.log(type, tag, subs);
 		// used to sort subreddits
-		let sortBy = {};
-		subs.forEach(function(sub) {
-			if (user.stats.subreddits[sub]) {
-				sortBy[sub] = user.stats.subreddits[sub].comment.total;
-			}
-		});
+		// let sortBy = {};
+		// subs.forEach((sub) => {
+			// console.log(this.stats);
+			// if (this.stats.subreddits[sub]) {
+				// sortBy[sub] = this.stats.subreddits[sub].comment.total;
+			// }
+		// });
 		
 		let table = $('<table/>').css('width', '100%');
 		let tr = $('<tr/>');
@@ -411,246 +531,108 @@ function User(user) {
 			])
 		);
 		
-		Object.keys(sortBy).sort(function(a,b){return sortBy[b] - sortBy[a]}).forEach(function(sub) {
-			let comparator = (settings[type][tag].avgtotal == 'total') ? user.stats.subreddits[sub].comment.total : user.stats.subreddits[sub].comment.average;
+		subs.forEach((sub) => {
+			let comparator = (settings[type][tag].avgtotal == 'total') ? this.stats.subreddits[sub].comment.total : this.stats.subreddits[sub].comment.average;
 			table.append(tr.clone().append([
 				td.clone().text(sub), 
-				td.clone().text(numPretty(user.stats.subreddits[sub].comment.total)),
-				td.clone().text(numPretty(user.stats.subreddits[sub].comment.average)),
-				td.clone().text(numPretty(user.stats.subreddits[sub].comment.length))
+				td.clone().text(numPretty(this.stats.subreddits[sub].comment.total)),
+				td.clone().text(numPretty(this.stats.subreddits[sub].comment.average)),
+				td.clone().text(numPretty(this.stats.subreddits[sub].comment.length))
 			]));
 		});
 		return table;
 	}
 	
-	this.positionRptTagInfo = function(div, pageX, pageY) {
-		div.css({
-			left: 		(pageX - 50) + 'px',
-			top: 		(pageY - 20) + 'px'
-		});
-		return div;
-	}
-	
-	// Old code from previous version
-	// this.addTag = function (label) {
-		// let user = $('.author:contains(' + this.name + '), .s1b41naq-1:contains(' + this.name + '), ._2tbHP6ZydRpjI44J3syuqC:contains(' + this.name + '), .s1461iz-1:contains(' + this.name + ')');
-		
-		// user.after('<span>' + label + '</span>');
-		// user.next().addClass('rptTag rptUser rpt-' + this.name + ' ' + label.split(' ').join('') + 'Color');
-		// if (label == 'troll' || label == 'sub troll' || label == 'deplorable') { addHoverEvent(this.name); }
-	// }
-	
-	// Old code from previous version
-	// this.labels = function() {
-		// return []; // remove for production
-		// let labels = [];
-		
-		// frank
-		// let age = Math.round((datenow() - this.about.created) / day);
-		// if (this.about.comment_karma < settings.minKarma && age < settings.minAge) {
-			// labels.push('frank');
-		// }
-		
-		// troll
-		// if (this.about.comment_karma <= -100) {
-			// labels.push('troll');
-			
-		// } else {
-			// sub troll
-			// let url = window.location.href.split('/');
-			// let subs = (url[3] == 'r') ? url[4].split('+') : [];
-			// let subTroll = false;
-			// subs.forEach((sub) => {
-				// if (sub && this.stats.subreddits[sub] && this.stats.subreddits[sub].comment.total <= -100) {
-					// console.log(sub + ': ' + this.stats.subreddits[sub].comment.total);
-					// subTroll = true;
-				// }
-			// });
-			// if (subTroll) { labels.push('sub troll'); }
-		// }
-		
-		// deplorable
-		// let deplorable = false;
-		// settings.deplorables.forEach((sub) => {
-			// if (this.stats.subreddits[sub] && this.stats.subreddits[sub].comment.total > settings.maxKarma) {
-				// deplorable = true;
-			// }
-		// });
-		// if (deplorable) { labels.push('deplorable') }
-		
-		// return labels.reverse();
-	// }
 	
 	
-	this.commentsGet = function () {
-		let user = users[this.name];
-		
-		// wait for the user to load from the db
-		if (user.stats.comment.updated == null) {
-			//console.log('waiting on user from db:', user.name, user.about.updated);
-			setTimeout(() => { user.commentsGet(); }, 100);
+	
+	
+	
+	
+	
+	
+	
+	
+	this.getAbout = function () {
+		// wait for the db to load the user
+		if (this.about.updated == null) {
+			// console.log('waiting on user from db:', this.name);
+			setTimeout(() => { this.getAbout(); }, 100);
 			return;
 		}
+		// console.log('\taboutGet():\t\t', this.name);
 		
-		// if no saved comments
-		if (user.comments == null) {
-			user.comments = [];
-			//console.log('get all comments: ' + user.name);
-			let url = 'https://www.reddit.com/user/' + user.name + '/comments.json?limit=100';
-			//console.log(url);
-			
-			$.getJSON(url, function(json) { user.commentsSave(json); })
-				.fail(function () { user.stats.comment.updated = datenow(); });
-		// saved comments but needs update
-		} else if (!user.stats.comment.updated || (datenow() - user.stats.comment.updated) > cacheTime) {
-			if (user.stats.comment.updated && (datenow() - user.stats.comment.updated) > cacheTime) {
-				let since = round((datenow() - user.stats.comment.updated) / cacheTime);
-				// console.log('update comments: ' + user.name + ' - days since last seen: - ' + since);
+		// if we didn't have about data saved or if the about data is outdated...
+		if (this.about.link_karma == undefined || datenow() - this.about.updated > cacheTime) {
+			let url = 'https://www.reddit.com/user/' + this.name + '/about.json';
+			$.getJSON(url, (json) => { this.saveAbout(json); })
+				.fail(function () { this.about.updated = datenow(); });
+		}
+	};
+	
+	this.saveAbout = function (json) {
+		this.about.link_karma 		= json.data.link_karma;
+		this.about.comment_karma 	= json.data.comment_karma;
+		this.about.created 			= json.data.created;
+		this.about.updated 			= datenow();
+	};
+	
+	
+	
+	
+	this.getDb = function() {
+		// console.log('\tdbGet():', this.name);
+		
+		let transaction = db.transaction([table]);
+		
+		// transaction errors
+		transaction.onerror = function(e) {
+			console.log('user.dbGet transaction error:');
+			console.log(e);
+		};
+		
+		let os = transaction.objectStore(table);
+		let req = os.get(this.name);
+		
+		// request errors
+		req.onerror = function(e) {
+			console.log('user.dbGet error: ' + table + '!');
+		};
+		
+		req.onsuccess = () => {
+			if (req.result) {
+				this.about = req.result.about;
+				this.stats = req.result.stats;
+				this.comments = req.result.comments;
+			} else {
+				this.about.updated 			= 0;
+				this.stats.comments.updated	= 0;
 			}
-			
-			//console.log('update comments', user.name);
-			user.purgeRecent();
-			let before = (user.comments[0]) ? user.comments[0].name : '';
-			let url = 'https://www.reddit.com/user/' + user.name + '/comments.json?limit=100&before=' + before;
-			//console.log(url);
-			$.getJSON(url, function(json) { user.commentsUpdate(json); })
-				.fail(function () { user.stats.comment.updated = datenow(); });
-			
-		// comments are up to date, no need to hit the api
-		// } else {
-			// console.log('use saved comments:', user.name);
-			// saved.push(user.name);
-		}
-		
-	};
-	
-	
-	// delete comments less than 2 days old
-	this.purgeRecent = function () {
-		
-		let twodays = datenow() - (2 * day);
-		let i;
-		for (i = 0; i < this.comments.length; i++) {
-			if (this.comments[i].created < twodays) { break; }
-		}
-		
-		this.comments.splice(0, i-1);
+			// console.log('db finishsed:\t', this.name);
+		};
 	}
 	
-	this.commentsSave = function (json) {
-		let user = users[this.name];
+
+	this.saveDb = function() {
+		var os = db.transaction([table], "readwrite").objectStore(table);
 		
-		//console.log(json.data.children);
-		json.data.children.forEach(function(comment) {
-			let save = {
-				name: 				comment.data.name,
-				parent_id:			comment.data.parent_id,
-				created:			comment.data.created_utc,
-				permalink:			comment.data.permalink,
-				subreddit:			comment.data.subreddit,
-				body:				comment.data.body,
-				controversiality:	comment.data.controversiality,
-				score:				comment.data.score,
-				ups:				comment.data.ups
-			};
-			
-			user.comments.push(save);
-		});
+		var save = {
+			name: 				this.name,
+			about: 				this.about,
+			comments: 			this.comments,
+			stats:				this.stats
+		};
 		
-		// more comments left
-		if (json.data.after) {
-			let after = json.data.children[json.data.children.length-1].data.name;
-			let url = 'https://www.reddit.com/user/' + user.name + '/comments.json?limit=100&after=' + after;
-			//console.log(url);
-			$.getJSON(url, function (json) { user.commentsSave(json); })
-				.fail(function () { user.stats.comment.updated = datenow(); });
-			
-		// finished getting all comments
-		} else {
-			//console.log('save finished: ' + user.name);
-			user.commentsEval();
-		}
-	};
-	
-	this.commentsUpdate = function(json) {
-		let user = users[this.name];
+		var req = os.put(save);
 		
-		json.data.children.reverse().forEach(function(comment) {
-			let save = {
-				name: 				comment.data.name,
-				parent_id:			comment.data.parent_id,
-				created:			comment.data.created_utc,
-				permalink:			comment.data.permalink,
-				subreddit:			comment.data.subreddit,
-				body:				comment.data.body,
-				controversiality:	comment.data.controversiality,
-				score:				comment.data.score,
-				ups:				comment.data.ups
-			};
-			
-			user.comments.unshift(save);
-		});
-		
-		// more comments left
-		if (json.data.before) {
-			let before = json.data.children[0].data.name;
-			let url = 'https://www.reddit.com/user/' + user.name + '/comments.json?limit=100&before=' + before;
-			//console.log(url);
-			$.getJSON(url, function(json){ user.commentsUpdate(json); })
-				.fail(function () { user.stats.comment.updated = datenow(); });
-			
-		// finished getting all comments
-		} else {
-			//console.log('update finished: ' + user.name);
-			user.commentsEval();
-		}
-	};
-	
-	this.commentsEval = function() {
-		//console.log('commentsEval:', this.name);
-		
-		// keep up to 1000 comments, discard old ones over 1000
-		if (this.comments.length >= 1000) {
-			this.comments.splice(1000, this.comments.length-1);
-		}
-		
-		this.stats.comment.total = 0;
-		this.comments.forEach((comment) => {
-			this.stats.comment.total += comment.score;
-		});
-		let scoreAvg = Math.round(this.stats.comment.total / this.comments.length * 100) / 100;
-		this.stats.comment.average = scoreAvg;
-		
-		
-		this.stats.subreddits = {};
-		this.comments.forEach((comment) => {
-			if (!this.stats.subreddits[comment.subreddit]) { this.stats.subreddits[comment.subreddit] = new SubStats; }
-			//if (comment.subreddit == 'link' || comment.subreddit == 'comment') { console.log('sub: ' + comment.subreddit); }
-			let sub = this.stats.subreddits[comment.subreddit];
-			sub.comment.total += comment.score;
-			sub.comment.length++;
-			sub.comment.average = Math.round(sub.comment.total / sub.comment.length * 100) / 100;
-			//console.log(comment.subreddit + ': ' +  this.stats.subreddits[sub].comment.total);
-		});
-		
-		
-		this.stats.comment.updated = datenow();
-		this.dbSave();
+		req.onerror = function(event) {
+			console.log('user.dbSave error: ' + table + ' - ' + this.name + '!');
+		};
 	}
 	
-	
-	
-	
-	/*
-	// for future development
-	this.linksGet = function () {
-		
-	}
-	
-	this.linksSave() {
-		
-	}
-	*/
+	this.getDb();
+	this.getAbout();
+	this.getComments();
 }
 
 
@@ -662,6 +644,13 @@ function round(num) {
 function datenow() {
 	return Math.round(Date.now() / 1000);
 }
+
+
+
+
+
+
+
 
 
 
