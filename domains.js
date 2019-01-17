@@ -5,76 +5,74 @@
 
 
 
-
-// Domain = function (name) {
-	// this.name = name;
-	
-	// this.addTag = function () {
-		// rptClass = 'rpt-' + this.name.split('.').join('');
-		// $('.rptDomain.' + rptClass).remove();
-		
-		// let domainTag = $('.domain:contains((' + this.name + '))');
-		// let domainTag = $('.domain:contains(' + this.name + '), .b5szba-0:contains(' + this.name + ')');
-		// domainTag.after('<span>propaganda</span>');
-		// domainTag.next().addClass('rptTag rptDomain ' + rptClass + ' propagandaColor');
-	// }
-// }
-
 //add tags to domains
 function addDomainTags(){
-	// get a list of matching domains on page
-	domains = getDomains();
+	if (domainsWorking) {
+		setTimeout(function() { addDomainTags(); }, 100);
+		return;
+	}
+	domainsWorking = true;
 	
-	for (tag in domains) {
-		for (i in domains[tag]) {
-			addDomainTag(tag, domains[tag][i]);
+	let domainElems = getDomainElements();
+	
+	for (let tag in domainElems) {
+		for (let domain in domainElems[tag]) {
+			domainElems[tag][domain].forEach(function (domSpan) {
+				setTimeout(function() { addDomainTag(domSpan, tag); }, Math.random() * 1000);
+			});
 		}
 	}
+	
+	setTimeout(function() { domainsWorking = false; }, 1000);
 }
 
-function addDomainTag(tag, domain) {
-	// console.log(tag, domain);
+// get list of domains which need tags
+function getDomainElements() {
+	let domains = {};
 	
-	rptClass = 'rpt-' + tag.split(/[^\w]/).join('') + '-' + domain.split(/[^\w]/).join('');
+	let domainElems = document.evaluate(
+		'//span[(contains(@class, "domain") or contains(@class, "b5szba-0"))]', 
+		document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 	
-	$('.rptDomain.' + rptClass).remove();
-	
-	let domainTag = $('.domain:contains(' + domain + '), .b5szba-0:contains(' + domain + ')');
-	tagSpan = $('<span/>').addClass('rptTag rptDomain ' + rptClass).text(tag);
-	tagSpan.css({
-		'background-color': '#' + settings.domains[tag].color, 
-		'color': '#' + settings.domains[tag].tcolor
-	});
-	domainTag.after(tagSpan);
-	
-	// console.log(tag + ':', settings.domains[tag].tcolor);
-}
-
-
-function getDomains() {
-	let domains = [];
-	for (tag in settings.domains) {
-		domains[tag] = [];
-	}
-	
-	// foreach domain link
-	let links = $('.domain > a, .b5szba-0');
-	$.each(links, function (i, linkurl) {
-		let domain = linkurl.text;
-		domain = domain.replace(/^https?:\/\//, '');
-		domain = domain.replace(/^www\./, '');
-		domain = domain.replace(/\/.*/, '');
+	let i = 0;
+	while (domainElems.snapshotItem(i)) {
+		let domSpan = domainElems.snapshotItem(i);
+		let domain = domSpan.children[0].textContent;
 		
-		for (tag in settings.domains) {
-			if (settings.domains[tag].list.includes(domain) && !domains[tag].includes(domain)) {
-				domains[tag].push(domain);
+		for (let tag in settings.domains) {
+			if (settings.domains[tag].list.includes(domain)) {
+				// if tag not enabled, skip it
+				if (!settings.domains[tag].enabled) { continue; }
+				
+				// if already tagged, skip this element
+				if (domSpan.parentNode.children[0].nodeName == 'SPAN') { continue; }
+				if (!(tag in domains)) {
+					domains[tag] = {}; 
+				}
+				if (!(domain in domains[tag])) {
+					domains[tag][domain] = []; 
+				}
+				domains[tag][domain].push(domSpan);
 			}
 		}
-	});
+		
+		i++;
+	}
 	
 	return domains;
 }
 
+// create and insert tag
+function addDomainTag(elem, tag) {
+	// console.log(tag, elem);
+	let span = document.createElement('span');
+	span.textContent = tag;
+	span.className = 'rptTag rptDomain';
+	span.style.backgroundColor = '#' + settings.domains[tag].color;
+	span.style.color = '#' + settings.domains[tag].tcolor;
+	
+	elem.parentNode.prepend(span);
+}
 
 
 

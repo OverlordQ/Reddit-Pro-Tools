@@ -183,6 +183,7 @@ function drawMenu() {
 		drawMain();
 	});
 	
+	/*
 	let advancedDiv = $('<div/>').css({cursor: 'pointer', position: 'relative'}).text('Advanced Settings');
 	
 	advancedDiv.click(function(e){
@@ -219,6 +220,8 @@ function drawMenu() {
 	});
 	
 	let undoResetDiv = $('<div/>').addClass('menuReset').append([advancedDiv, undoDiv, resetDiv]);
+	*/
+	let undoResetDiv = $('<div/>').addClass('menuReset').append([undoDiv, resetDiv]);
 	$('.menuFrame').append(undoResetDiv);
 	
 	if (settingsEqual(startSettings)) {
@@ -356,6 +359,10 @@ function checkbox(checked) {
 	});
 	
 	input.focusout(function() {
+		saveSettings();
+	});
+	
+	input.change(function() {
 		saveSettings();
 	});
 	

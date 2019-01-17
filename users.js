@@ -26,25 +26,29 @@
 function getAuthors() {
 	let authors = [];
 	
-	// create array of users on the page
-	let users = $('.author, .s1b41naq-1, ._2tbHP6ZydRpjI44J3syuqC, .s1461iz-1');
+	let userElems = document.evaluate(
+		'//a[(contains(@class, "author") or contains(@class, "s1b41naq-1") or contains(@class, "_2tbHP6ZydRpjI44J3syuqC") or contains(@class, "s1461iz-1"))]', 
+		document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 	
-	for (var i = 0; i < users.length; i++) {
-		let author = $(users[i]).text().replace(/^u\//, '');
-		
-		if (author == 'AutoModerator') { continue; }
-		if (author == 'PoliticsModeratorBot') { continue; }
-		if (author == '[deleted]') { continue; }
+	let i = 0;
+	while (userElems.snapshotItem(i)) {
+		let author = userElems.snapshotItem(i).textContent.replace(/^u\//, '');
 		
 		// if not already in our list of authors
-		if (author && author != '' && authors.indexOf(author) < 0) {
+		if (author && 
+			author != '' && 
+			authors.indexOf(author) < 0 &&
+			author != '[deleted]' &&
+			author != 'AutoModerator' &&
+			author != 'PoliticsModeratorBot' &&
+			author != 'LegalAdviceModerator' &&
+			author != 'court-reporter' &&
+			author != 'Invite to chat') {
+				
 			authors.push(author);
 		}
+		i++;
 	}
-	
-	// $.each(authors.sort(), function(i, author) {
-		// console.log(i + ': ' + author)
-	// });
 	
 	return authors;
 }
@@ -299,7 +303,7 @@ function User(username) {
 		}
 	}
 	
-	this.subSort = function (type, tag, subs) {						
+	this.subSort = function (type, tag, subs) {
 		let sortBy = [];
 		// for (let sub in subs) {
 		subs.forEach((sub) => {
@@ -329,111 +333,124 @@ function User(username) {
 		if (!this.hasTag) { return; }
 		printLog('\t\t\t\taddTags():', this.name);
 		
-		// $('.rptTag.rptUser-' + this.name).remove();
-		$('span.rptTagWrapper.rptUser-' + this.name).remove();
+		let userElems = this.getUserElemements();
 		
-		let tagSpans = [];
-		for (let type in this.tags) {
-			for (let tag in this.tags[type]) {
-				tagSpans.push(this.tagSpan(type, tag, this.tags[type][tag]));
+		userElems.forEach((userElem) => {
+			let wrapper = this.tagWrapper();
+			for (let type in this.tags) {
+				for (let tag in this.tags[type]) {
+					let tagSpan = this.tagSpan(type, tag);
+					
+					wrapper.appendChild(tagSpan);
+				}
 			}
-		}
+			setTimeout(function() { userElem.after(wrapper); }, Math.random() * 500);
+		});
 		
-		let userDiv = $(
-			'.author:contains(' + 
-			this.name + '), .s1b41naq-1:contains(' + 
-			this.name + '), ._2tbHP6ZydRpjI44J3syuqC:contains(' + 
-			this.name + '), .s1461iz-1:contains(' + 
-			this.name + ')');
-		userDiv.after(this.tagWrapper().append(tagSpans));
-		// let test = document.createElement('p');
-		// let wrapper = this.tagWrapper();
-		// wrapper.appendChild(tagSpans);
-		// console.log(wrapper);
-		// userDiv.after(wrapper);
+		
 		this.working = false;
 	}
 	
+	this.getUserElemements = function() {
+		let userLinks = [];
+		
+		let userElems = document.evaluate(
+			'//a[(contains(@class, "author") or contains(@class, "s1b41naq-1") or contains(@class, "_2tbHP6ZydRpjI44J3syuqC") or contains(@class, "s1461iz-1")) and text()="' + this.name + '"]', 
+			document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+		
+		let i = 0;
+		while (userElems.snapshotItem(i)) {
+			let userElem = userElems.snapshotItem(i);
+			
+			if (!userElem.nextSibling.classList.contains('rptTagWrapper')) {
+				userLinks.push(userElem);
+			}
+			i++;
+		}
+		
+		return userLinks.reverse();
+	}
+	
 	this.tagWrapper = function() {
-		let span = $('<span/>').addClass('rptTagWrapper rptUser-' + this.name);
-		// let span = document.createElement('span');
-		// span.className = 'rptTagWrapper rptUser-' + this.name;
+		let span = document.createElement('span');
+		span.className = 'rptTagWrapper rptUser-' + this.name;
 		return span;
 	}
 	
-	this.tagSpan = function(type, tag, subs = []) {
-		// console.log('tagSpan():', this.name);
-		let span = $('<span/>').addClass('rptTag rptUser-' + this.name).css({
-			'background-color': '#' + settings[type][tag].color, 
-			'color': 			'#' + settings[type][tag].tcolor
-		}).attr({
-			user: this.name,
-			type: type,
-			tag: tag
-		}).text(tag);
+	this.tagSpan = function(type, tag) {
+		let span = document.createElement('span');
+		span.textContent = tag;
+		// span.className = 'rptTag rptUser-' + this.name;
+		span.className = 'rptTag';
+		span.style.backgroundColor = '#' + settings[type][tag].color;
+		span.style.color = '#' + settings[type][tag].tcolor;
 		
-		// Hover elements defined here...
-		let displayTag = span.clone(); //.css({'position': 'relative', 'top': '-2px'});
+		let displayTag = span.cloneNode(true);
 		
-		let hoverDiv = $('<div/>')
-			.addClass('rptTagInfo')
-			.css('font-size', 'x-small')
-			.mouseleave(function () { this.remove();});
-		
-		let header = $('<div/>').addClass('textCenter').css({
-			'margin-bottom': '5px', 
-			'white-space': 'nowrap', 
-			'font-size': '110%'});
-		
-		let rpt = $('<div/>').addClass('textCenter bold').css({
-			'color': '#dd0000', 
-			'font-size': '130%',
-			'margin-bottom': '5px'
-		}).text('Reddit Pro Tools');
-		
-		header.append([$('<a/>').attr('src', '/u/' + this.name).text(' /u/' + this.name), ':', displayTag]);
-		
-		let tagDesc = $('<div/>').addClass('textCenter bold border').css({
-			'padding-top': '5px',
-			'font-size': '90%',
-			'border-width': '1px 0px 0px 0px'});
+		span.addEventListener('mouseenter', (e) => {
+			let hoverDiv = document.createElement('div');
+			hoverDiv.className = 'rptTagInfo';
 			
-		let body = $('<div/>').css({
-			'margin-top': '7px'});
-				
-		if (type == 'accountage') {
-			let year = 365.25;
-			let age = Math.round((datenow() - this.about.created) / day);
-			let years = Math.floor(age / year);
-			let months = Math.floor(age % year / year * 12);
-			let days = Math.floor(age - years * year - months * year / 12);
-			
-			let ageText = (years) ? years + ' years,' : '';
-			ageText += (months) ? ' ' + months + ' months,' : ''
-			ageText += (days) ? ' ' + days + ' days' : '';
-			
-			// console.log(this.name, years, months, days);
-			
-			span.mouseenter((e) => {
-				tagDesc.text('Account age ' + settings[type][tag].gtlt + ' than ' + settings[type][tag].age + ' days');
-				// body.append($('<a/>').attr('href', 'http://reddit.com/u/' + this.name).text('/u/' + this.name));
-				body.html($('<div/>').addClass('textCenter').text('Account age: ' + ageText));
-				
-				hoverDiv.empty();
-				hoverDiv.append([rpt, header, tagDesc, body]);
-				
-				$('body').append(hoverDiv);
-				hoverDiv = this.positionRptTagInfo(hoverDiv, e.pageX, e.pageY);
+			hoverDiv.addEventListener('mouseleave', (e) => {
+				hoverDiv.parentNode.removeChild(hoverDiv);
 			});
-		} else if (type == 'subreddits') {
-			span.mouseenter((e) => {
-				tagDesc.text('Comment karma ' + settings[type][tag].gtlt + ' than ' + settings[type][tag].karma + ' in:');
+			
+			let header = document.createElement('div');
+			header.className = 'rptTagInfoHeader textCenter';
+			
+			let rpt = document.createElement('div');
+			rpt.style.color = '#ff0000';
+			rpt.style.fontSize = '130%';
+			rpt.style.marginBottom = '5px';
+			rpt.textContent = 'Reddit Pro Tools';
+			rpt.className = 'textCenter bold';
+			
+			// let userLink
+			
+			// header.append([$('<a/>').attr('src', '/u/' + this.name).text(' /u/' + this.name), ':', displayTag]);
+			
+			let userLink = document.createElement('a');
+			userLink.href = '/u/' + this.name;
+			userLink.textContent = '/u/' + this.name;
+			
+			let colon = document.createElement('span');
+			colon.textContent = ': ';
+			
+			header.appendChild(userLink);
+			header.appendChild(colon);
+			header.appendChild(displayTag);
+			
+				
+			// let body = $('<div/>').css({
+				// 'margin-top': '7px'});
+				
+			let tagDesc = document.createElement('div');
+			tagDesc.className = 'rptTagInfoDesc textCenter bold';
+				
+			let body = document.createElement('div');
+			body.className = 'rptTagInfoBody textCenter';
+			
+			if (type == 'accountage') {
+				let year = 365.25;
+				let age = Math.round((datenow() - this.about.created) / day);
+				let years = Math.floor(age / year);
+				let months = Math.floor(age % year / year * 12);
+				let days = Math.floor(age - years * year - months * year / 12);
+				
+				let ageText = (years) ? years + ' years,' : '';
+				ageText += (months) ? ' ' + months + ' months,' : ''
+				ageText += (days) ? ' ' + days + ' days' : '< 1 day';
+				
+				tagDesc.textContent = 'Account age ' + settings[type][tag].gtlt + ' than ' + numPretty(settings[type][tag].age) + ' days';
+				body.textContent = 'Account age: ' + ageText;
+				
+			} else if (type == 'subreddits') {
+				// console.log(this.name, type, tag, this.tags[type][tag]);
 				
 				let subLimit = 4;
 				let subsText = '';
 				for (let i in settings[type][tag].list) {
 					if (i > subLimit - 1) { continue; }
-					// console.log(i, settings[type][tag].list[i]);
 					if (i != 0) {
 						subsText += ', ';
 					}
@@ -442,50 +459,57 @@ function User(username) {
 				if (settings[type][tag].list.length > subLimit) { 
 					subsText += ', ...';
 				}
-				let subsList = $('<div/>').addClass('textCenter').text(subsText);
 				
-				body.html(this.statsTable(type, tag, subs));
+				tagDesc.innerHTML = 'Comment karma ' + settings[type][tag].gtlt + ' than ' + numPretty(settings[type][tag].karma) + ' in:';
 				
-				hoverDiv.empty();
-				hoverDiv.append([rpt, header, tagDesc, subsList, body]);
+				let subsDiv = document.createElement('div');
+				subsDiv.style.fontWeight = 'normal';
+				subsDiv.textContent = '(' + subsText + ')';
+				tagDesc.append(subsDiv);
 				
-				$('body').append(hoverDiv);
-				hoverDiv = this.positionRptTagInfo(hoverDiv, e.pageX, e.pageY);
-			});
+				body.append(this.statsTable(this.tags[type][tag]));
+				
+			} else if (type == 'subkarma') {
+				tagDesc.textConent = 'Comment karma ' + settings[type][tag].gtlt + ' than ' + numPretty(settings[type][tag].karma) + ' in current subreddit';
+				body.append(this.statsTable(this.tags[type][tag]));
+				
+			} else if (type == 'karma') {
+				tagDesc.textContent = 'Total comment karma ' + settings[type][tag].gtlt + ' than ' + numPretty(settings[type][tag].karma);
+				body.append(this.statsTable(this.tags[type][tag]));
+				
+			} else if (type == 'rptStats') {
+				if (tag == 'RPT+') {
+					tagDesc.textContent = 'Subreddits by positive comment karma';
+					
+					let subs = this.subSort(type, tag, Object.keys(this.stats.subreddits));
+					subs.splice(10);
+					
+					body.append(this.statsTable(subs));
+				} else if (tag == 'RPT-') {
+					tagDesc.textContent = 'Subreddits by negative comment karma';
+					
+					let subs = this.subSort(type, tag, Object.keys(this.stats.subreddits));
+					subs.splice(10);
+					
+					body.append(this.statsTable(subs));
+				}
+			}
 			
-		} else if (type == 'subkarma') {
-			span.mouseenter((e) => {
-				tagDesc.text('Comment karma ' + settings[type][tag].gtlt + ' than ' + settings[type][tag].karma + ' in current subreddit');
-				body.html(this.statsTable(type, tag, subs));
-				
-				hoverDiv.empty();
-				hoverDiv.append([rpt, header, tagDesc, body]);
-				
-				$('body').append(hoverDiv);
-				hoverDiv = this.positionRptTagInfo(hoverDiv, e.pageX, e.pageY);
-			});
-			
-		} else if (type == 'karma') {
-			span.mouseenter((e) => {
-				tagDesc.text('Total comment karma ' + settings[type][tag].gtlt + ' than ' + settings[type][tag].karma);
-				body.html(this.statsTable(type, tag, subs));
-				
-				hoverDiv.empty();
-				hoverDiv.append([rpt, header, tagDesc, body]);
-				
-				$('body').append(hoverDiv);
-				hoverDiv = this.positionRptTagInfo(hoverDiv, e.pageX, e.pageY);
-			});
-		}
+			hoverDiv.appendChild(rpt);
+			hoverDiv.appendChild(header);
+			hoverDiv.appendChild(tagDesc);
+			hoverDiv.appendChild(body);
+		
+			document.body.appendChild(hoverDiv);
+			this.positionRptTagInfo(hoverDiv, e.pageX, e.pageY);
+		});
 		
 		return span;
 	}
 	
 	this.positionRptTagInfo = function(div, pageX, pageY) {
-		div.css({
-			left: 		(pageX - 50) + 'px',
-			top: 		(pageY - 20) + 'px'
-		});
+		div.style.left = (pageX - 50) + 'px';
+		div.style.top  = (pageY - 20) + 'px';
 		
 		let pos = $(div)[0].getBoundingClientRect();
 		
@@ -493,53 +517,76 @@ function User(username) {
 			div.css('left', '0px');
 		}
 		if (0 > pos.top) {
-			div.css('top', $(window).scrollTop() + 'px');
+			console.log(div.scrollTop);
+			div.style.top = document.documentElement.scrollTop + 'px';
 		}
-		if (pos.right > $(window).innerWidth()) {
-			div.css('left', ($(window).scrollLeft() + $(window).innerWidth() - pos.width - 10) + 'px');
+		if (pos.right > window.innerWidth) {
+			div.style.left = (document.documentElement.scrollLeft + window.innerWidth - pos.width - 20) + 'px';
 		}
-		if (pos.bottom > $(window).innerHeight()) {
-			div.css('top', ($(window).scrollTop() + $(window).innerHeight() - pos.height) + 'px');
+		if (pos.bottom > window.innerHeight) {
+			div.style.top = (document.documentElement.scrollTop + window.innerHeight - pos.height) + 'px';
 		}
-		
-		return div;
 	}
 	
-	this.statsTable = function(type, tag, subs) {
-		// console.log(type, tag, subs);
-		// used to sort subreddits
-		// let sortBy = {};
-		// subs.forEach((sub) => {
-			// console.log(this.stats);
-			// if (this.stats.subreddits[sub]) {
-				// sortBy[sub] = this.stats.subreddits[sub].comment.total;
-			// }
-		// });
+	this.statsTable = function(subs) {
+		let table = document.createElement('table');
+		table.style.width = '100%';
 		
-		let table = $('<table/>').css('width', '100%');
-		let tr = $('<tr/>');
-		let td = $('<td/>').addClass('textCenter').css({
-			'padding-left': '5px', 
-			'padding-right': '5px',
-		});
-		table.append(
-			tr.clone().css('color', '#000000').append([
-				td.clone().addClass('border').css('border-width', '0px 1px 1px 0px').text('Subreddit'),
-				td.clone().addClass('border').css('border-width', '0px 1px 1px 0px').text('Total Karma'),
-				td.clone().addClass('border').css('border-width', '0px 1px 1px 0px').text('Average Karma'),
-				td.clone().addClass('border').css('border-width', '0px 0px 1px 0px').text('Comments')
-			])
-		);
+		let tr = document.createElement('tr');
+		let td = document.createElement('td');
+		td.style.paddingLeft = '5px';
+		td.style.paddingRight = '5px';
+		
+		let thSubreddit = td.cloneNode();
+		thSubreddit.className = 'border';
+		thSubreddit.style.borderWidth = '0px 1px 1px 0px';
+		thSubreddit.textContent = 'Subreddit';
+		
+		let thTotal = td.cloneNode();
+		thTotal.className = 'border';
+		thTotal.style.borderWidth = '0px 1px 1px 0px';
+		thTotal.textContent = 'Total Karma';
+		
+		let thAverage = td.cloneNode();
+		thAverage.className = 'border';
+		thAverage.style.borderWidth = '0px 1px 1px 0px';
+		thAverage.textContent = 'Average Karma';
+		
+		let thComments = td.cloneNode();
+		thComments.className = 'border';
+		thComments.style.borderWidth = '0px 0px 1px 0px';
+		thComments.textContent = 'Comments';
+		
+		let th = tr.cloneNode();
+		th.appendChild(thSubreddit);
+		th.appendChild(thTotal);
+		th.appendChild(thAverage);
+		th.appendChild(thComments);
+		table.appendChild(th);
+		
 		
 		subs.forEach((sub) => {
-			let comparator = (settings[type][tag].avgtotal == 'total') ? this.stats.subreddits[sub].comment.total : this.stats.subreddits[sub].comment.average;
-			table.append(tr.clone().append([
-				td.clone().text(sub), 
-				td.clone().text(numPretty(this.stats.subreddits[sub].comment.total)),
-				td.clone().text(numPretty(this.stats.subreddits[sub].comment.average)),
-				td.clone().text(numPretty(this.stats.subreddits[sub].comment.length))
-			]));
+			let trStats = tr.cloneNode();
+			
+			let tdSubreddit = td.cloneNode();
+			tdSubreddit.textContent = sub;
+			
+			let tdTotal = td.cloneNode();
+			tdTotal.textContent = numPretty(this.stats.subreddits[sub].comment.total);
+			
+			let tdAverage = td.cloneNode();
+			tdAverage.textContent = numPretty(this.stats.subreddits[sub].comment.average);
+			
+			let tdComments = td.cloneNode();
+			tdComments.textContent = numPretty(this.stats.subreddits[sub].comment.length);
+			
+			trStats.appendChild(tdSubreddit);
+			trStats.appendChild(tdTotal);
+			trStats.appendChild(tdAverage);
+			trStats.appendChild(tdComments);
+			table.appendChild(trStats);
 		});
+		
 		return table;
 	}
 	
@@ -551,7 +598,7 @@ function User(username) {
 	
 	
 	
-	
+
 	
 	this.getAbout = function () {
 		// wait for the db to load the user
@@ -566,7 +613,10 @@ function User(username) {
 		if (this.about.link_karma == undefined || datenow() - this.about.updated > cacheTime) {
 			let url = 'https://www.reddit.com/user/' + this.name + '/about.json';
 			$.getJSON(url, (json) => { this.saveAbout(json); })
-				.fail(function () { this.about.updated = datenow(); });
+				.fail(() => {
+					console.log('getJSON Error:', this);
+					this.about.updated = datenow(); 
+				});
 		}
 	};
 	

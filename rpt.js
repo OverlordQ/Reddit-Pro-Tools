@@ -21,6 +21,8 @@ const cacheTime = day;
 // const cacheTime = 0;
 //const cacheTime = 60;
 let numUsers = 0;
+let usersWorking = false;
+let domainsWorking = false;
 
 
 // add google analytics
@@ -49,10 +51,8 @@ $(document).ready(function() {
 	setTimeout(function() { rptMain(); }, 100);
 	
 	// find new comments
-	// there is probably a better way to do this with
-	// DOM events like I did with the domains
-	numUsers = $('.author').length;
-	setInterval(function () { newComments(); }, 1000);
+	numUsers = getNumUsers();
+	setInterval(function () { checkNewComments(); }, 500);
 });
 
 
@@ -78,6 +78,7 @@ function rptMain() {
 		// if (user != 'PoppinKREAM' && user != '2243217910346') { return; }
 		
 		if (!users[user]) {	users[user] = new User(user); }
+		
 		if (!users[user].working) {
 			users[user].working = true;
 			setTimeout(function(){ users[user].addTags(); }, Math.random() * 500);
@@ -86,24 +87,34 @@ function rptMain() {
 			printLog('working:', user);
 		}
 	});
-	// console.log(users);
 	
+	// addUserTags();
 	addDomainTags();
 }
 
 
 // check if new comments have been loaded onto the page
-function newComments() {
-	let users = $('.author, .s1b41naq-1, ._2tbHP6ZydRpjI44J3syuqC, .s1461iz-1');
+function checkNewComments() {
+	let users = getNumUsers();
 	
-	if (numUsers != users.length) {
+	if (numUsers != users) {
 		// console.log('new comments loaded');
-		numUsers = users.length;
+		numUsers = users;
 		
 		// if so, run the main loop again
-		// setTimeout(function () { rptMain(); }, 100);
 		rptMain();
 	}
+}
+
+function getNumUsers() {
+	let userElems = document.evaluate(
+		'//a[contains(@class, "author") or contains(@class, "s1b41naq-1") or contains(@class, "_2tbHP6ZydRpjI44J3syuqC") or contains(@class, "s1461iz-1")]', 
+		document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+		
+	let i = 0;
+	while (userElems.snapshotItem(i)) { i++; }
+	
+	return i;
 }
 
 
@@ -185,11 +196,21 @@ function addSnoopSnooTag() {
 	}
 	
 	let children = elem.children();
-	let user = children[0].text;
+	let user = children[0].text.replace(/^\/u\//i, '');
 	let last = children[(children.length - 1)];
 	children[(children.length - 1)].remove();
-	elem.append('<span class="snoopSnoo">(<a href="https://snoopsnoo.com' + user + '">SnoopSnoo</a>)</span>');
-	elem.append(last);
+	last.style.marginLeft = '3px';
+	
+	let snoopSnoo = $('<span/>').addClass('snoopSnoo').append('(', $('<a/>').attr('href', 'https://snoopsnoo.com/u/' + user).text('SnoopSnoo'), ')');
+	let rptPos = users[user].tagSpan('rptStats', 'RPT+');
+	let rptNeg = users[user].tagSpan('rptStats', 'RPT-');
+	
+	let wrapper = $('<span/>');
+	wrapper.append(snoopSnoo, rptPos, rptNeg, last);
+	
+	
+	elem.append(wrapper);
+	// elem.append(last);
 	elem.css('font-size', 'smaller');
 }
 

@@ -97,18 +97,6 @@ img.deleteIcon {
 	font-size:		xx-small;
 }
 
-.rptTag {
-	color: 			#ffffff;
-	padding: 		1px 5px 1px 5px;
-	margin: 		0px 3px 0px 3px;
-	font-size:		xx-small;
-	border-style:	solid;
-	border-width:	1px;
-	border-color:	#c7c7c7;
-	border-radius:	4px;
-	white-space: 	nowrap;
-}
-
 .leftCol {
 	flex: 			40%;
 }
@@ -122,6 +110,23 @@ img.deleteIcon {
 	margin-bottom:	3px;
 }
 
+.rptTag {
+	color: 			#ffffff;
+	padding: 		1px 5px 1px 5px;
+	margin: 		0px 3px 0px 3px;
+	font-size:		xx-small;
+	border-style:	solid;
+	border-width:	1px;
+	border-color:	#c7c7c7;
+	border-radius:	4px;
+	white-space: 	nowrap;
+}
+
+.rptDomain {
+	position:		relative;
+	top:			-3px;
+}
+
 .rptTagInfo {
 	width:				350px;
 	position:			absolute;
@@ -131,20 +136,27 @@ img.deleteIcon {
 	border-width:		1px;
 	border-radius:		4px;
 	padding:			10px;
-	z-index: 			1000;
+	z-index: 			20000000;
+	font-size:			x-small;
 }
 
 .rptTagInfoHeader {
-	background-color:	#f0f3fc;
-	width:				auto;
-	padding:			10px;
-	font-size:			120%;
+	font-size:			110%;
+	white-space:		nowrap;
+	margin-bottom: 		5px;
+	white-space: 		nowrap;
+	font-size: 			110%;
+}
+
+.rptTagInfoDesc {
+	padding-top:		5px;
+	font-size: 			90%;
+	border-style:		solid;
+	border-width: 		1px 0px 0px 0px;
 }
 
 .rptTagInfoBody {
-	width:				auto;
-	padding:			10px;
-	font-size:			120%;
+	margin-top: 		7px;
 }
 
 .rptTagInfoTable {
