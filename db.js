@@ -17,7 +17,7 @@ window.IDBKeyRange = window.IDBKeyRange || window.webkitIDBKeyRange || window.ms
 
 
 // open database
-let request = window.indexedDB.open(database, 3);
+let request = window.indexedDB.open(database, 4);
 
 request.onerror = function(event) {
 	console.log('db connection error');

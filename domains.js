@@ -37,7 +37,7 @@ function getDomainElements() {
 	let i = 0;
 	while (domainElems.snapshotItem(i)) {
 		let domSpan = domainElems.snapshotItem(i);
-		let domain = domSpan.children[0].textContent;
+		let domain = domSpan.textContent.replace(/[\(\)]/g, '');
 		
 		for (let tag in settings.domains) {
 			if (settings.domains[tag].list.includes(domain)) {

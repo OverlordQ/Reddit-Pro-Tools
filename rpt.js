@@ -7,6 +7,7 @@
 "use strict";
 
 const printLogs = false;
+// const printLogs = true;
 
 var settings;
 var db;
@@ -35,9 +36,9 @@ _gaq.push(['_trackPageview']);
 $(document).ready(function() {
 	getSettings();
 	
-	console.log('');
-	console.log('Reddit Pro Tools!');
-	console.log('');
+	// console.log('');
+	// console.log('Reddit Pro Tools!');
+	// console.log('');
 	
 	// console.log('length: ' + $('meta[property="og:site_name"]').length)
 	// which version of reddit are we using?
@@ -177,12 +178,58 @@ function printLog() {
 
 // event triggered by elements being loaded into the page
 $(document).on('DOMNodeInserted', function(e) {
+	let classes = e.target.className.split(' ');
+	
 	// if element loading is the RES user mouseover thingie
-	if ($(e.target).attr('class') == 'RESHoverTitle') {
-		addSnoopSnooTag();
+	if (classes.includes('RESHoverTitle')) {
+		// e.target.childNodes[1].innerHTML = '';
+		// console.log(e.target.childNodes[0].textContent);
+		// setTimeout(function(){ addToRESHover(e.target.childNodes[0]); } , 1000);
+		addToRESHover(e.target.childNodes[0].textContent, e.target);
 	}
 });
 
+
+function addToRESHover(user, elem) {
+	// wait for RES and the Reddit API 
+	if (elem.childNodes[0].childNodes.length == 0) {
+		setTimeout(function(){ addToRESHover(user, elem); }, 10);
+		return;
+	}
+	
+	let title = elem.childNodes[0];
+	let body = elem.parentNode.childNodes[5].childNodes[0];
+	// let zIndex = elem.parentNode.style.zIndex;
+	
+	// add SnoopSnoo link
+	let snoopSnooLink = document.createElement('a');
+	snoopSnooLink.href = 'https://snoopsnoo.com/u/' + user;
+	snoopSnooLink.textContent = 'SnoopSnoo';
+	
+	title.style.whiteSpace = 'nowrap';
+	title.style.fontSize = 'smaller';
+	title.childNodes[6].after('(', snoopSnooLink, ')');
+	
+	// add RPT Stats
+	let fieldPair = document.createElement('div');
+	fieldPair.className = 'fieldPair';
+	
+	let fieldPairLabel = document.createElement('div');
+	fieldPairLabel.className = 'fieldPair-label';
+	fieldPairLabel.textContent = 'RPT Stats:';
+	
+	let fieldPairText = document.createElement('div');
+	fieldPairText.className = 'fieldPair-text';
+	
+	let rptPos = users[user].tagSpan('rptStats', 'RPT+');
+	let rptNeg = users[user].tagSpan('rptStats', 'RPT-');
+	
+	fieldPairText.append(rptPos, rptNeg);
+	fieldPair.append(fieldPairLabel, fieldPairText);
+	body.prepend(fieldPair);
+	
+	// console.log(elem.parentNode.style.zIndex);
+}
 
 function addSnoopSnooTag() {
 	let elem = $($('.RESHoverTitle > div')[0]);
@@ -191,10 +238,13 @@ function addSnoopSnooTag() {
 	// if they haven't been loaded...
 	if (elem.children().length < 4) {
 		// do the recursion dance
-		setTimeout(function(){ addSnoopSnooTag() }, 100);
+		setTimeout(function(){ addSnoopSnooTag() }, 10);
 		return;
 	}
 	
+	console.log(elem.parent().parent().attr('class'));
+	elem.parent().parent().css('width', '530px');
+	elem.css('white-space', 'nowrap');
 	let children = elem.children();
 	let user = children[0].text.replace(/^\/u\//i, '');
 	let last = children[(children.length - 1)];
@@ -206,11 +256,11 @@ function addSnoopSnooTag() {
 	let rptNeg = users[user].tagSpan('rptStats', 'RPT-');
 	
 	let wrapper = $('<span/>');
+	// wrapper.css('margin-left', '3px');
 	wrapper.append(snoopSnoo, rptPos, rptNeg, last);
 	
 	
 	elem.append(wrapper);
-	// elem.append(last);
 	elem.css('font-size', 'smaller');
 }
 

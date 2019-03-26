@@ -11,7 +11,8 @@ var domainText 		= 'add domain here';
 var deplorableText 	= 'add subreddit here';
 
 var selected = {
-	type: 'subreddits',
+	// type: 'subreddits',
+	type: 'supportrpt',
 	tag:  false
 };
 
@@ -81,9 +82,8 @@ function drawMenu() {
 		}
 		
 		typeSpan.click(function(e) {
-			// let clicked = $(e.target).text();
 			selected.type = $(e.target).attr('type');
-			selected.tag = (selected.tag in settings[selected.type]) ? selected.tag : false;
+			selected.tag = (selected.type != 'supportrpt' && selected.tag in settings[selected.type]) ? selected.tag : false;
 			drawMenu();
 			drawMain();
 		});
@@ -162,7 +162,7 @@ function drawMenu() {
 		settings = $.extend(true, {}, startSettings);
 		saveSettings();
 		
-		if (!(selected.tag in settings[selected.type])) {
+		if (selected.tag && !(selected.tag in settings[selected.type])) {
 			selected.tag = false;
 		}
 		
@@ -175,7 +175,7 @@ function drawMenu() {
 		settings = $.extend(true, {}, defaultSettings);
 		saveSettings();
 		
-		if (!(selected.tag in settings[selected.type])) {
+		if (selected.tag && !(selected.tag in settings[selected.type])) {
 			selected.tag = false;
 		}
 		
@@ -183,7 +183,7 @@ function drawMenu() {
 		drawMain();
 	});
 	
-	/*
+	
 	let advancedDiv = $('<div/>').css({cursor: 'pointer', position: 'relative'}).text('Advanced Settings');
 	
 	advancedDiv.click(function(e){
@@ -195,7 +195,7 @@ function drawMenu() {
 		
 		let btnDiv = $('<div/>');
 		let copyBtn = $('<input/>').addClass('settingsInput').attr({type: 'submit'}).val('Copy');
-		let pasteBtn = $('<input/>').addClass('settingsInput').attr({type: 'submit'}).val('Paste');
+		let pasteBtn = $('<input/>').addClass('settingsInput').attr({type: 'submit', disabled: 'disabled'}).val('Paste');
 		btnDiv.append(copyBtn, pasteBtn);
 		
 		$(this).after(div.append(btnDiv));
@@ -205,7 +205,8 @@ function drawMenu() {
 		});
 		
 		copyBtn.click(function() {
-			let data = JSON.stringify(settings, null, '\t');
+			let data = JSON.stringify(settings, null, 4);
+			data = data.replace(/^.*\n/, '').replace(/\n.*$/, '');
 			let textArea = $('<textarea>').val(data);
 			$(this).after(textArea);
 			textArea.select();
@@ -219,9 +220,10 @@ function drawMenu() {
 		});
 	});
 	
-	let undoResetDiv = $('<div/>').addClass('menuReset').append([advancedDiv, undoDiv, resetDiv]);
-	*/
-	let undoResetDiv = $('<div/>').addClass('menuReset').append([undoDiv, resetDiv]);
+	// let undoResetDiv = $('<div/>').addClass('menuReset').append([advancedDiv, undoDiv, resetDiv]);
+	let undoResetDiv = $('<div/>').addClass('menuReset').append(undoDiv, resetDiv);
+	
+	// let undoResetDiv = $('<div/>').addClass('menuReset').append([undoDiv, resetDiv]);
 	$('.menuFrame').append(undoResetDiv);
 	
 	if (settingsEqual(startSettings)) {
@@ -241,12 +243,9 @@ function drawMain() {
 		selected.tag = tags[0];
 	}
 	
-	$('.mainFrame').empty();
+	// console.log(selected.type);
 	
-	// console.log('selected.type:');
-	// console.log('type:', selected.type);
-	// console.log(menu[selected.type]);
-	// console.log(menu[selected.type].desc);
+	$('.mainFrame').empty();
 	
 	// mainFrame header
 	let header = $('<div/>').addClass('header').text(menu[selected.type].label);
@@ -258,9 +257,6 @@ function drawMain() {
 	
 	$(banner).append(tag);
 	$('.mainFrame').append(banner);
-	
-	// if no selected tag, skip printing the rest of the settings page
-	if (!selected.tag) { return; }
 	
 	//mainFrame settings
 	let table = $('<table/>');
@@ -287,7 +283,7 @@ function drawMain() {
 		trs.push(settingsListTr('Subreddits'));
 		
 		table.append(trs);
-		$('.mainFrame').append(table);		
+		$('.mainFrame').append(table);
 		
 	} else if (selected.type == 'domains') {
 		let trs = basicSettings();
@@ -296,6 +292,63 @@ function drawMain() {
 		
 		table.append(trs);
 		$('.mainFrame').append(table);
+		
+	} else if (selected.type == 'supportrpt') {
+		// let mainDiv = $('<div>').addClass('banner')
+		
+		
+		// mainDiv.append($('<div>').addClass('tagname').text('Patreon Supporters'));
+		// patrons.forEach(function(patron) {
+			// console.log(patron);
+			// mainDiv.append($('<div>').addClass('patron').text(patron));
+		// });
+		
+		// mainDiv.append($('<div>').addClass('tagname').text('Former Patreon Supporters'));
+		
+		// $('.mainFrame').append(mainDiv);
+		
+		// console.log(patrons);
+		let numPatrons = 0;
+		for (var key in supporters) {
+			for (var i in supporters[key].list) {
+				numPatrons++;
+			}
+		}
+		
+		let patreonLink = $('<a>').attr('href', 'https://www.patreon.com/feeling_impossible').text('Support Reddit Pro Tools through Patreon!');
+		let patreonLinkDiv = $('<div>').addClass('patreonLink').append(patreonLink);
+		
+		let header = $('<div>').addClass('patreonHeader');
+		header.append(patreonLinkDiv);
+		header.append($('<div>').text('This project is entirely supported through Patreon. If you find Reddit Pro Tools useful, you have these ' + numPatrons + ' people to thank. Become a Patron so I can add you to the list.'));
+		
+		$('.mainFrame').append(header);
+		
+		
+		for (var key in supporters) {
+			let pDiv = $('<div>').addClass('patrons');
+			pDiv.append($('<div>').addClass('tagname').text(supporters[key].label));
+			
+			supporters[key].list.forEach(function(patron) {
+				pDiv.append($('<div>').addClass('patron').text(patron));
+				
+			});
+			
+			
+			$('.mainFrame').append(pDiv);
+		}
+		
+		let redditLink = $('<a>').attr('href', 'https://www.reddit.com/r/redditprotools/').text('/r/RedditProTools');
+		let techSupport = $('<div>').addClass('patreonHeader').append('If you need technical support, see ', redditLink, '.');
+		
+		let impossibleLink = $('<a>').attr('href', 'https://www.reddit.com/user/feeling_impossible/overview').text('/u/feeling_impossible');
+		let createdBy = $('<div>').addClass('patreonHeader').append('Reddit Pro Tools was created by ', impossibleLink, '.');
+		
+		$('.mainFrame').append(techSupport, createdBy);
+		
+		
+		
+		
 	}
 }
 

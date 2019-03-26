@@ -121,21 +121,6 @@ function User(username) {
 			url += '&' + type + '=' + id;
 		}
 		
-		// console.log('\t\t\t\turl:', url.replace(/.*\//g, ''), '\n');
-
-		// $.getJSON(url, (json) => {
-			// json.data.before = (json.data.children[0]) ? json.data.children[0].data.name : null;
-			// this.saveComments(type, json);
-			
-			// if (json.data[type]) {
-				// setTimeout(() => { this.getCommentsJson(type, json.data[type]); }, 10000);
-				// this.getCommentsJson(type, json.data[type]);
-			// } else {
-				// console.log('finished comments:', this.name);
-				// this.evalComments();
-			// }
-		// }).fail(function () { this.stats.comments.updated = datenow(); });
-		
 		$.ajax({
 			type: 'GET',
 			url: url,
@@ -344,7 +329,7 @@ function User(username) {
 					wrapper.appendChild(tagSpan);
 				}
 			}
-			setTimeout(function() { userElem.after(wrapper); }, Math.random() * 500);
+			setTimeout(function() { userElem.before(wrapper); }, Math.random() * 500);
 		});
 		
 		
@@ -362,7 +347,8 @@ function User(username) {
 		while (userElems.snapshotItem(i)) {
 			let userElem = userElems.snapshotItem(i);
 			
-			if (!userElem.nextSibling.classList.contains('rptTagWrapper')) {
+			// if it doesn't already have a tag...
+			if (!userElem.previousSibling || !userElem.previousSibling.tagName || userElem.previousSibling.tagName == 'A') {
 				userLinks.push(userElem);
 			}
 			i++;
@@ -390,6 +376,12 @@ function User(username) {
 		span.addEventListener('mouseenter', (e) => {
 			let hoverDiv = document.createElement('div');
 			hoverDiv.className = 'rptTagInfo';
+			
+			let zIndex = 1000000;
+			if (span.parentElement.className.split(' ').includes('fieldPair-text')) {
+				zIndex = span.parentElement.parentElement.parentElement.parentElement.parentElement.style.zIndex + 10;
+			}
+			hoverDiv.style.zIndex = zIndex;
 			
 			hoverDiv.addEventListener('mouseleave', (e) => {
 				hoverDiv.parentNode.removeChild(hoverDiv);
@@ -517,7 +509,6 @@ function User(username) {
 			div.css('left', '0px');
 		}
 		if (0 > pos.top) {
-			console.log(div.scrollTop);
 			div.style.top = document.documentElement.scrollTop + 'px';
 		}
 		if (pos.right > window.innerWidth) {
@@ -631,7 +622,7 @@ function User(username) {
 	
 	
 	this.getDb = function() {
-		// console.log('\tdbGet():', this.name);
+		// console.log('\tgetDb():', this.name);
 		
 		let transaction = db.transaction([table]);
 		
@@ -658,12 +649,12 @@ function User(username) {
 				this.about.updated 			= 0;
 				this.stats.comments.updated	= 0;
 			}
-			// console.log('db finishsed:\t', this.name);
 		};
 	}
 	
 
 	this.saveDb = function() {
+		// console.log('\tsaveDb():', this.name);
 		var os = db.transaction([table], "readwrite").objectStore(table);
 		
 		var save = {

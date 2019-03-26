@@ -25,10 +25,6 @@
 	background-color: #ff4500;
 }
 
-.snoopSnooColor {
-	background-color: #008000;
-}
-
 .header {
 	font-size: 		larger;
 	font-weight: 	bold;
@@ -113,7 +109,7 @@ img.deleteIcon {
 .rptTag {
 	color: 			#ffffff;
 	padding: 		1px 5px 1px 5px;
-	margin: 		0px 3px 0px 3px;
+	margin: 		0px 3px 0px 0px;
 	font-size:		xx-small;
 	border-style:	solid;
 	border-width:	1px;
@@ -136,7 +132,6 @@ img.deleteIcon {
 	border-width:		1px;
 	border-radius:		4px;
 	padding:			10px;
-	z-index: 			20000000;
 	font-size:			x-small;
 }
 

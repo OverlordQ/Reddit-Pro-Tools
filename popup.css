@@ -3,6 +3,7 @@
 
 
 
+
 div {
 	/* border-style: 	solid; */
 	/* border-color: 	#000000; */
@@ -148,6 +149,48 @@ span.menuTag {
 .description {
 	font-size:		small;
 	margin-bottom:	10px;
+}
+
+.patreonHeader {
+	font-size:		small;
+	margin-left:	20px;
+	margin-bottom:	10px;
+}
+
+
+.patreonHeader a:link {
+	color:				#006B7F;
+	text-decoration: 	underline;
+}
+
+.patreonHeader a:visited {
+	color:				#006B7F;
+	text-decoration: 	underline;
+}
+
+.patreonHeader a:hover {
+	color:				#006B7F;
+	text-decoration: 	underline;
+}
+
+.patreonHeader a:active {
+	color:				#006B7F;
+	text-decoration: 	underline;
+}
+
+.patreonLink {
+	font-size:		medium;
+	margin-bottom:	10px;
+}
+
+.patrons {
+	margin-bottom:	10px;
+	margin-left:	20px;
+}
+
+.patron {
+	font-size:		small;
+	margin-left:	10px;
 }
 
 .tagname {
