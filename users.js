@@ -27,7 +27,7 @@ function getAuthors() {
 	let authors = [];
 	
 	let userElems = document.evaluate(
-		'//a[(contains(@class, "author") or contains(@class, "s1b41naq-1") or contains(@class, "_2tbHP6ZydRpjI44J3syuqC") or contains(@class, "s1461iz-1"))]', 
+		'//a[' + userElemEval + ']', 
 		document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 	
 	let i = 0;
@@ -114,8 +114,8 @@ function User(username) {
 	}
 	
 	this.getCommentsJson = function(type = 'after', id = null) {
-		// console.log('\t\tgetCommentsJson(' + type + ', ' + id + '):', this.name);
-		let url = 'https://www.reddit.com/user/' + this.name + '/comments.json?sort=new&limit=100';
+		let domain = window.location.hostname;
+		let url = 'https://' + domain + '/user/' + this.name + '/comments.json?sort=new&limit=100';
 		
 		if (id) {
 			url += '&' + type + '=' + id;
@@ -208,31 +208,29 @@ function User(username) {
 		printLog('\t\t\tevalTags():', this.name);
 		let statsTableLength = 10;
 	
-		for (let type in settings) {
+		for (let type in settings.tags) {
 			this.tags[type] = {}
-			for (let tag in settings[type]) {
-				if (!settings[type][tag].enabled) { continue; }
+			for (let tag in settings.tags[type]) {
+				if (!settings.tags[type][tag].enabled) { continue; }
 				
 				if (type == 'accountage') {
 					let age = Math.round((datenow() - this.about.created) / day);
-					if ((settings[type][tag].gtlt == 'greater' && age > settings[type][tag].age) || 
-						(settings[type][tag].gtlt != 'greater' && age < settings[type][tag].age)) {
+					if ((settings.tags[type][tag].gtlt == 'greater' && age > settings.tags[type][tag].age) || 
+						(settings.tags[type][tag].gtlt != 'greater' && age < settings.tags[type][tag].age)) {
 						this.tags[type][tag] = true;
 						this.hasTag = true;
 					}
 					
 				} else if (type == 'subreddits') {
-					// let subs = [];
-					settings[type][tag].list.forEach((sub) => {
+					settings.tags[type][tag].list.forEach((sub) => {
 						if (!sub || !this.stats.subreddits[sub]) { return; }
-						if (settings[type][tag].avgtotal == 'average' && this.stats.subreddits[sub].comment.length < 10) { return; }
+						if (settings.tags[type][tag].avgtotal == 'average' && this.stats.subreddits[sub].comment.length < 10) { return; }
 						
-						let comparator = (settings[type][tag].avgtotal == 'total') ? this.stats.subreddits[sub].comment.total : this.stats.subreddits[sub].comment.average;
+						let comparator = (settings.tags[type][tag].avgtotal == 'total') ? this.stats.subreddits[sub].comment.total : this.stats.subreddits[sub].comment.average;
 						
-						if ((settings[type][tag].gtlt == 'greater' && comparator > settings[type][tag].karma) ||
-							(settings[type][tag].gtlt != 'greater' && comparator < settings[type][tag].karma)) {
-							// subs.push(sub);
-							let subs = this.subSort(type, tag, settings[type][tag].list);
+						if ((settings.tags[type][tag].gtlt == 'greater' && comparator > settings.tags[type][tag].karma) ||
+							(settings.tags[type][tag].gtlt != 'greater' && comparator < settings.tags[type][tag].karma)) {
+							let subs = this.subSort(type, tag, settings.tags[type][tag].list);
 							subs.splice(statsTableLength);
 							this.tags[type][tag] = subs;
 							this.hasTag = true;
@@ -240,25 +238,18 @@ function User(username) {
 						}
 					});
 					
-					// if (subs.length) {
-						// subs = this.subSort(type, tag, subs);
-						// subs.splice(statsTableLength);
-						// this.tags[type][tag] = subs;
-						// this.hasTag = true;
-					// }
-					
 				} else if (type == 'subkarma') {
 					let url = window.location.href.split('/');
 					let urlSubs = (url[3] == 'r') ? url[4].split('+') : [];
 					let subs = [];
 					urlSubs.forEach((sub) => {
 						if (!sub || !this.stats.subreddits[sub]) { return; }
-						if (settings[type][tag].avgtotal == 'average' && this.stats.subreddits[sub].comment.length < 10) { return; }
+						if (settings.tags[type][tag].avgtotal == 'average' && this.stats.subreddits[sub].comment.length < 10) { return; }
 						
-						let comparator = (settings[type][tag].avgtotal == 'total') ? this.stats.subreddits[sub].comment.total : this.stats.subreddits[sub].comment.average;
+						let comparator = (settings.tags[type][tag].avgtotal == 'total') ? this.stats.subreddits[sub].comment.total : this.stats.subreddits[sub].comment.average;
 						
-						if ((settings[type][tag].gtlt == 'greater' && comparator > settings[type][tag].karma) ||
-							(settings[type][tag].gtlt != 'greater' && comparator < settings[type][tag].karma)) {
+						if ((settings.tags[type][tag].gtlt == 'greater' && comparator > settings.tags[type][tag].karma) ||
+							(settings.tags[type][tag].gtlt != 'greater' && comparator < settings.tags[type][tag].karma)) {
 							subs.push(sub);
 						}
 					});
@@ -271,10 +262,10 @@ function User(username) {
 					}
 					
 				} else if (type == 'karma') {
-					let comparator = (settings[type][tag].avgtotal == 'total') ? this.stats.comments.total : this.stats.comments.average;
+					let comparator = (settings.tags[type][tag].avgtotal == 'total') ? this.stats.comments.total : this.stats.comments.average;
 					
-					if ((settings[type][tag].gtlt == 'greater' && comparator > settings[type][tag].karma) ||
-						(settings[type][tag].gtlt != 'greater' && comparator < settings[type][tag].karma)) {
+					if ((settings.tags[type][tag].gtlt == 'greater' && comparator > settings.tags[type][tag].karma) ||
+						(settings.tags[type][tag].gtlt != 'greater' && comparator < settings.tags[type][tag].karma)) {
 						
 						let subs = this.subSort(type, tag, Object.keys(this.stats.subreddits));
 						subs.splice(statsTableLength);
@@ -293,12 +284,12 @@ function User(username) {
 		// for (let sub in subs) {
 		subs.forEach((sub) => {
 			if (!(sub in this.stats.subreddits)) { return; }
-			sortBy[sub] = (settings[type][tag].avgtotal == 'total') ? this.stats.subreddits[sub].comment.total : this.stats.subreddits[sub].comment.average;
+			sortBy[sub] = (settings.tags[type][tag].avgtotal == 'total') ? this.stats.subreddits[sub].comment.total : this.stats.subreddits[sub].comment.average;
 		});
 		
 		subs = Object.keys(sortBy).sort(function(a, b){ return sortBy[b] - sortBy[a]; });
 		
-		if (settings[type][tag].gtlt != 'greater') { subs = subs.reverse(); }
+		if (settings.tags[type][tag].gtlt != 'greater') { subs = subs.reverse(); }
 		
 		return subs;
 	}
@@ -319,6 +310,7 @@ function User(username) {
 		printLog('\t\t\t\taddTags():', this.name);
 		
 		let userElems = this.getUserElemements();
+		// console.log(userElems);
 		
 		userElems.forEach((userElem) => {
 			let wrapper = this.tagWrapper();
@@ -338,9 +330,8 @@ function User(username) {
 	
 	this.getUserElemements = function() {
 		let userLinks = [];
-		
 		let userElems = document.evaluate(
-			'//a[(contains(@class, "author") or contains(@class, "s1b41naq-1") or contains(@class, "_2tbHP6ZydRpjI44J3syuqC") or contains(@class, "s1461iz-1")) and text()="' + this.name + '"]', 
+			'//a[' + userElemEval + ' and (text()="u/' + this.name + '" or text()="' + this.name + '")]', 
 			document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 		
 		let i = 0;
@@ -348,8 +339,10 @@ function User(username) {
 			let userElem = userElems.snapshotItem(i);
 			
 			// if it doesn't already have a tag...
-			if (!userElem.previousSibling || !userElem.previousSibling.tagName || userElem.previousSibling.tagName == 'A') {
-				userLinks.push(userElem);
+			if (!userElem.previousSibling || 
+				!userElem.previousSibling.tagName || 
+				(userElem.previousSibling.tagName != 'SPAN' || !userElem.previousSibling.className.split(' ').includes('rptTagWrapper'))) {
+					userLinks.push(userElem);
 			}
 			i++;
 		}
@@ -368,8 +361,8 @@ function User(username) {
 		span.textContent = tag;
 		// span.className = 'rptTag rptUser-' + this.name;
 		span.className = 'rptTag';
-		span.style.backgroundColor = '#' + settings[type][tag].color;
-		span.style.color = '#' + settings[type][tag].tcolor;
+		span.style.backgroundColor = '#' + settings.tags[type][tag].color;
+		span.style.color = '#' + settings.tags[type][tag].tcolor;
 		
 		let displayTag = span.cloneNode(true);
 		
@@ -397,10 +390,6 @@ function User(username) {
 			rpt.textContent = 'Reddit Pro Tools';
 			rpt.className = 'textCenter bold';
 			
-			// let userLink
-			
-			// header.append([$('<a/>').attr('src', '/u/' + this.name).text(' /u/' + this.name), ':', displayTag]);
-			
 			let userLink = document.createElement('a');
 			userLink.href = '/u/' + this.name;
 			userLink.textContent = '/u/' + this.name;
@@ -411,10 +400,6 @@ function User(username) {
 			header.appendChild(userLink);
 			header.appendChild(colon);
 			header.appendChild(displayTag);
-			
-				
-			// let body = $('<div/>').css({
-				// 'margin-top': '7px'});
 				
 			let tagDesc = document.createElement('div');
 			tagDesc.className = 'rptTagInfoDesc textCenter bold';
@@ -433,26 +418,24 @@ function User(username) {
 				ageText += (months) ? ' ' + months + ' months,' : ''
 				ageText += (days) ? ' ' + days + ' days' : '< 1 day';
 				
-				tagDesc.textContent = 'Account age ' + settings[type][tag].gtlt + ' than ' + numPretty(settings[type][tag].age) + ' days';
+				tagDesc.textContent = 'Account age ' + settings.tags[type][tag].gtlt + ' than ' + numPretty(settings.tags[type][tag].age) + ' days';
 				body.textContent = 'Account age: ' + ageText;
 				
 			} else if (type == 'subreddits') {
-				// console.log(this.name, type, tag, this.tags[type][tag]);
-				
 				let subLimit = 4;
 				let subsText = '';
-				for (let i in settings[type][tag].list) {
+				for (let i in settings.tags[type][tag].list) {
 					if (i > subLimit - 1) { continue; }
 					if (i != 0) {
 						subsText += ', ';
 					}
-					subsText += settings[type][tag].list[i];
+					subsText += settings.tags[type][tag].list[i];
 				}
-				if (settings[type][tag].list.length > subLimit) { 
+				if (settings.tags[type][tag].list.length > subLimit) { 
 					subsText += ', ...';
 				}
 				
-				tagDesc.innerHTML = 'Comment karma ' + settings[type][tag].gtlt + ' than ' + numPretty(settings[type][tag].karma) + ' in:';
+				tagDesc.textContent = 'Comment karma ' + settings.tags[type][tag].gtlt + ' than ' + numPretty(settings.tags[type][tag].karma) + ' in:';
 				
 				let subsDiv = document.createElement('div');
 				subsDiv.style.fontWeight = 'normal';
@@ -462,11 +445,11 @@ function User(username) {
 				body.append(this.statsTable(this.tags[type][tag]));
 				
 			} else if (type == 'subkarma') {
-				tagDesc.textConent = 'Comment karma ' + settings[type][tag].gtlt + ' than ' + numPretty(settings[type][tag].karma) + ' in current subreddit';
+				tagDesc.textContent = 'Comment karma ' + settings.tags[type][tag].gtlt + ' than ' + numPretty(settings.tags[type][tag].karma) + ' in current subreddit';
 				body.append(this.statsTable(this.tags[type][tag]));
 				
 			} else if (type == 'karma') {
-				tagDesc.textContent = 'Total comment karma ' + settings[type][tag].gtlt + ' than ' + numPretty(settings[type][tag].karma);
+				tagDesc.textContent = 'Total comment karma ' + settings.tags[type][tag].gtlt + ' than ' + numPretty(settings.tags[type][tag].karma);
 				body.append(this.statsTable(this.tags[type][tag]));
 				
 			} else if (type == 'rptStats') {
@@ -529,22 +512,22 @@ function User(username) {
 		td.style.paddingRight = '5px';
 		
 		let thSubreddit = td.cloneNode();
-		thSubreddit.className = 'border';
+		thSubreddit.className = 'rptBorder';
 		thSubreddit.style.borderWidth = '0px 1px 1px 0px';
 		thSubreddit.textContent = 'Subreddit';
 		
 		let thTotal = td.cloneNode();
-		thTotal.className = 'border';
+		thTotal.className = 'rptBorder';
 		thTotal.style.borderWidth = '0px 1px 1px 0px';
 		thTotal.textContent = 'Total Karma';
 		
 		let thAverage = td.cloneNode();
-		thAverage.className = 'border';
+		thAverage.className = 'rptBorder';
 		thAverage.style.borderWidth = '0px 1px 1px 0px';
 		thAverage.textContent = 'Average Karma';
 		
 		let thComments = td.cloneNode();
-		thComments.className = 'border';
+		thComments.className = 'rptBorder';
 		thComments.style.borderWidth = '0px 0px 1px 0px';
 		thComments.textContent = 'Comments';
 		
@@ -602,11 +585,13 @@ function User(username) {
 		
 		// if we didn't have about data saved or if the about data is outdated...
 		if (this.about.link_karma == undefined || datenow() - this.about.updated > cacheTime) {
-			let url = 'https://www.reddit.com/user/' + this.name + '/about.json';
+			let domain = window.location.hostname;
+			let url = 'https://' + domain + '/user/' + this.name + '/about.json';
+			// let url = 'https://api.reddit.com/user/' + this.name + '/about.json';
 			$.getJSON(url, (json) => { this.saveAbout(json); })
-				.fail(() => {
-					console.log('getJSON Error:', this);
-					this.about.updated = datenow(); 
+				.fail((jqxhr, textStatus, error) => {
+					console.log('getJSON Error: ' + textStatus + ", " + error + ', ' + url);
+					this.about.updated = 0; 
 				});
 		}
 	};

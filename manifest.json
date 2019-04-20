@@ -2,7 +2,7 @@
   "name": "Reddit Pro Tools",
   "short_name": "RddtProTools",
   "description" : "Reddit User Analyzer and More",
-  "version": "1.00",
+  "version": "1.4",
   "author": "impossible",
   "browser_action": {
     "default_icon": "images/rpt-16.png"
@@ -15,15 +15,15 @@
   "content_scripts": [{
 	"run_at" : "document_idle",
     "css": ["styles.css"],
-    "js": ["jquery-3.3.1.min.js", "rpt.js", "settings.js", "users.js", "db.js", "domains.js", "ga.js"],
+    "js": ["jquery-3.3.1.min.js", "analytics.js", "rpt.js", "settings.js", "users.js", "db.js", "domains.js"],
     "matches": ["https://*.reddit.com/*"]
   }],
-  "permissions": ["storage", "tabs"],
+  "permissions": ["storage"],
   "icons": {
 	"16": "images/rpt-16.png",
 	"48": "images/rpt-48.png",
 	"128": "images/rpt-128.png"
   },
-  "web_accessible_resources": ["images/", "images/ceddit.png"],
+  "web_accessible_resources": ["images/", "images/removeddit.png", "images/transparent-1x1.png"],
   "content_security_policy": "script-src 'self' https://ssl.google-analytics.com; object-src 'self'"
 }

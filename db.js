@@ -39,6 +39,9 @@ request.onupgradeneeded = function(event) {
 	
     if (db.objectStoreNames.contains(table)) {
 		//console.log('deletedb');
+		
+		// This may speed up the db delete. Worth checking out.
+		// indexedDB.deleteDatabase('rpt')
 		db.deleteObjectStore(table);
 	}
 	

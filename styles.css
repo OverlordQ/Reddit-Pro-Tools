@@ -44,19 +44,19 @@ div.margintop {
 	padding-top: 	5px;
 }
 
-input {
-	margin:			5px 10px 5px 10px;
-	padding-left:	5px;
-	padding-right:	5px;
-}
+/* input { */
+	/* margin:			5px 10px 5px 10px; */
+	/* padding-left:	5px; */
+	/* padding-right:	5px; */
+/* } */
 
-input.unfocus {
-	color: 			#888888;
-}
+/* input.unfocus { */
+	/* color: 			#888888; */
+/* } */
 
-input.focus {
-	color: 			#000000;
-}
+/* input.focus { */
+	/* color: 			#000000; */
+/* } */
 
 .bold {
 	font-weight: 	bold;
@@ -175,7 +175,14 @@ img.deleteIcon {
 	top:				4px;
 }
 
-.border {
+.removeddit {
+	width:				14px;
+	height:				14px;
+	position: 			relative;
+	top:				4px;
+}
+
+.rptBorder {
 	border-style: 	solid;
 	border-color: 	#000000;
 	border-width:	1px;

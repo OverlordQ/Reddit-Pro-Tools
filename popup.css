@@ -63,45 +63,79 @@ body {
 	padding-top:		40px;
 }
 
-.menuFrame {
+
+
+
+div.menuSection {
+	white-space: 	nowrap;
+	cursor:			pointer;
+	line-height:	25px;
+	margin-top: 	5px;
+	font-size:		1.2em;
+	/* height:			3em; */
 }
 
-.mainFrame {
+div.menuSectionHover {
+	font-size:		1.25em !important;
+	position: 		relative;
+	left: 			-1px;
 }
+
+
+
+
 
 div.menuType {
+	white-space: 	nowrap;
+	margin-left:	15px;
 	margin-top: 	5px;
-	font-size:		120%;
+	line-height:	20px;
 }
 
 span.menuType {
-	white-space: 	nowrap;
 	cursor:			pointer;
-	line-height:	10px;
+	font-size:		1em;
+}
+
+span.menuTypeHover {
+	font-size:		1.05em !important;
+	position: 		relative;
+	left: 			-1px;
 }
 
 
+
+
+
 div.menuTag {
-	margin-left:	15px;
-	font-size:		medium;
 	white-space: 	nowrap;
+	line-height:	14px;
+	margin-left:	30px;
+	padding: 0px;
 }
 
 span.menuTag {
 	cursor:			pointer;
-	line-height:	10px;
+	font-size:		.8em;
+}
+
+span.menuTagHover {
+	font-size:		.85em !important;
+	/* position: 		relative; */
+	/* left: 			-1px; */
 }
 
 
 
 
 
-.menuHover {
-	font-size:		105%;
-	position: 		relative;
+
+/* .menuHover { */
+	/* font-size:		105%; */
+	/* position: 		relative; */
 				   
-	left: 			-1px;
-}
+	/* left: 			-1px; */
+/* } */
 
 .menuReset {
 	margin-top: 	30px;
@@ -122,8 +156,8 @@ span.menuTag {
 	width:			12px;
 	height:			12px;
 	margin-right:	3px;
-	position:		relative;
 	display:		inline-block;
+	position:		relative;
 	
     background-repeat: no-repeat;
     background-position: center;
@@ -209,6 +243,8 @@ span.menuTag {
 	padding:		5px;
 	z-index:		1000;
 	position:		absolute;
+	top:			0px;
+	left:			0px;
 	
 	font-size:		smaller;
 	font-weight:	normal;
@@ -222,6 +258,11 @@ span.menuTag {
 .settingsInput {
 	margin-left:	3px;
 	margin-right:	3px;
+}
+
+input.checkbox {
+	position:		relative;
+	top:			2px;
 }
 
 .textInput {

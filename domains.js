@@ -39,10 +39,10 @@ function getDomainElements() {
 		let domSpan = domainElems.snapshotItem(i);
 		let domain = domSpan.textContent.replace(/[\(\)]/g, '');
 		
-		for (let tag in settings.domains) {
-			if (settings.domains[tag].list.includes(domain)) {
+		for (let tag in settings.tags.domains) {
+			if (settings.tags.domains[tag].list.includes(domain)) {
 				// if tag not enabled, skip it
-				if (!settings.domains[tag].enabled) { continue; }
+				if (!settings.tags.domains[tag].enabled) { continue; }
 				
 				// if already tagged, skip this element
 				if (domSpan.parentNode.children[0].nodeName == 'SPAN') { continue; }
@@ -68,8 +68,8 @@ function addDomainTag(elem, tag) {
 	let span = document.createElement('span');
 	span.textContent = tag;
 	span.className = 'rptTag rptDomain';
-	span.style.backgroundColor = '#' + settings.domains[tag].color;
-	span.style.color = '#' + settings.domains[tag].tcolor;
+	span.style.backgroundColor = '#' + settings.tags.domains[tag].color;
+	span.style.color = '#' + settings.tags.domains[tag].tcolor;
 	
 	elem.parentNode.prepend(span);
 }
