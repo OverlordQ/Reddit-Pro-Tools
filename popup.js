@@ -19,6 +19,13 @@ var selected = {
 };
 
 
+
+// add google analytics
+ga('create', 'UA-124046785-1', 'auto');
+ga('set', 'checkProtocolTask', function(){});
+ga('send', 'event', 'Settings', 'view');
+
+
 $(document).ready(function() {
 	drawMenu();
 	drawMain();

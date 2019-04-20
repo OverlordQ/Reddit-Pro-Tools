@@ -287,34 +287,69 @@ function addPatreonLink() {
 	let patreonUrl = 'https://www.patreon.com/join/feeling_impossible/checkout';
 	
 	let elem;
-	let topMargin = 11;
+	let topMargin = 22;
+	let bottomMargin = 0;
 	
-	// old reddit
-	if ($('.submit-text').length) {
-		elem = $('.submit-text');
-		
-	} else if ($('.submit-link').length) {
-		elem = $('.submit-link');
-		
 	// new reddit
-	} else if ($('.s10kkmv9-0').length) {
+	if ($('.s10kkmv9-0').length) {
 		topMargin = 15;
 		elem = $($('.s10kkmv9-0')[0]);
+	
+	// old reddit
+	} else {
+		// in a subreddit
+		if (window.location.href.split('/')[3] == 'r') {
+			if ($('.submit-text').length) {
+				elem = $($('.submit-text').parent());
+
+			} else if ($('.submit-link').length) {
+				elem = $($('.submit-link').parent());
+			}
+		} else {
+			if ($('a[data-event-action="createsubreddit"]').length) {
+				topMargin = 0;
+				bottomMargin = 14;
+				elem = $($('a[data-event-action="createsubreddit"]').parent().parent().parent());
+			}
+		}
+	}
 		
 	// user overview
-	} else {
+	if (!elem) {
 		return;
 	}
+	
+	// old reddit
+	// if ($('a[data-event-action="createsubreddit"]').length) {
+		// elem = $($('a[data-event-action="createsubreddit"]').parent().parent().parent());
+		
+	// } else if ($('.submit-text').length) {
+		// elem = $('.submit-text');
+		
+	// } else if ($('.submit-link').length) {
+		// elem = $('.submit-link');
+		
+	// new reddit
+	// } else if ($('.s10kkmv9-0').length) {
+		// topMargin = 15;
+		// elem = $($('.s10kkmv9-0')[0]);
+		
+	// user overview
+	// } else {
+		// console.log('no ad');
+		// return;
+	// }
 	
 	// add analytics for Patreon Ad show
 	ga('send', 'event', 'Patreon Ad', 'show');
 	
 	let patreonDiv = $('<div>').css({
-		'margin-top': 	topMargin + 'px',
-		'text-align':	'center',
-		'font-weight':	'bold',
-		'font-size':	'13px',
-		'color':		'#336699'
+		'margin-top': 		topMargin + 'px',
+		'margin-bottom': 	bottomMargin + 'px',
+		'text-align':		'center',
+		'font-weight':		'bold',
+		'font-size':		'13px',
+		'color':			'#336699'
 	}).text('Support Reddit Pro Tools');
 	
 	let btnWidth = 176;
