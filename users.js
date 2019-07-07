@@ -372,7 +372,7 @@ function User(username) {
 			
 			let zIndex = 1000000;
 			if (span.parentElement.className.split(' ').includes('fieldPair-text')) {
-				zIndex = span.parentElement.parentElement.parentElement.parentElement.parentElement.style.zIndex + 10;
+				zIndex = window.getComputedStyle(span.parentElement.parentElement.parentElement.parentElement.parentElement).getPropertyValue('z-index') + 10;
 			}
 			hoverDiv.style.zIndex = zIndex;
 			
