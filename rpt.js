@@ -173,18 +173,19 @@ $(document).on('DOMNodeInserted', function(e) {
 	
 	// if element loading is the RES user mouseover thingie
 	if (classes.includes('RESHoverTitle')) {
-		addToRESHover(e.target.childNodes[0].textContent, e.target);
+		addToRESHover(e.target);
 	}
 });
 
 
-function addToRESHover(user, elem) {
+function addToRESHover(elem) {
 	// wait for RES and the Reddit API 
 	if (elem.childNodes[0].childNodes.length == 0) {
-		setTimeout(function(){ addToRESHover(user, elem); }, 10);
+		setTimeout(function(){ addToRESHover(elem); }, 10);
 		return;
 	}
 	
+	let user = elem.childNodes[0].textContent.match(/\/u\/(.*)/)[1];
 	let title = elem.childNodes[0];
 	let body = elem.parentNode.childNodes[5].childNodes[0];
 	// let zIndex = elem.parentNode.style.zIndex;

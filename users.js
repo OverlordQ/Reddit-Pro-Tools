@@ -206,6 +206,13 @@ function User(username) {
 	
 	this.evalTags = function () {
 		printLog('\t\t\tevalTags():', this.name);
+		// wait for the user info to be updated
+		if (this.about.created == null) {
+			// console.log('evalTags() waiting on user about:', this.name);
+			setTimeout(() => { this.evalTags(); }, 100);
+			return;
+		}
+
 		let statsTableLength = 10;
 	
 		for (let type in settings.tags) {
