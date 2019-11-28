@@ -2,7 +2,7 @@
   "name": "Reddit Pro Tools",
   "short_name": "RddtProTools",
   "description" : "Reddit User Analyzer and More",
-  "version": "1.34.4",
+  "version": "1.34.5",
   "author": "impossible",
   "browser_action": {
     "default_icon": "images/rpt-16.png"
